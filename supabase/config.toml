@@ -1,0 +1,7 @@
+project_id = "rescue-alert"
+
+[db]
+major_version = 17
+
+[db.extensions]
+postgis = true

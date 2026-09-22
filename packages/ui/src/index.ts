@@ -27,6 +27,7 @@ export * from "./components/StateView";
 export * from "./components/RescueCaseCard";
 export * from "./components/CaseHeader";
 export * from "./components/OfficialUpdate";
+export * from "./components/Timeline";
 export * from "./components/ResponderCard";
 export * from "./components/LocationField";
 export * from "./components/MediaPicker";

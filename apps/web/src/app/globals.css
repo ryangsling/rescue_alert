@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/*
+ * Color values are never typed here - they come from
+ * @rescue-alert/design-tokens via CSS custom properties injected by
+ * the root layout (see src/app/theme-vars.tsx). This file only maps
+ * those custom properties onto Tailwind v4's @theme so utilities like
+ * `bg-primary` and `text-critical` resolve to the Rescue UI palette.
+ */
+@theme inline {
+  --font-sans:
+    var(--font-inter), var(--font-noto-bengali), system-ui, sans-serif;
+
+  --color-primary: var(--rescue-primary);
+  --color-on-primary: var(--rescue-on-primary);
+  --color-primary-container: var(--rescue-primary-container);
+  --color-on-primary-container: var(--rescue-on-primary-container);
+  --color-secondary: var(--rescue-secondary);
+  --color-secondary-container: var(--rescue-secondary-container);
+  --color-tertiary: var(--rescue-tertiary);
+  --color-background: var(--rescue-background);
+  --color-surface: var(--rescue-surface);
+  --color-surface-subtle: var(--rescue-surface-subtle);
+  --color-surface-strong: var(--rescue-surface-strong);
+  --color-text: var(--rescue-text);
+  --color-text-muted: var(--rescue-text-muted);
+  --color-border: var(--rescue-border);
+  --color-border-strong: var(--rescue-border-strong);
+  --color-focus: var(--rescue-focus);
+
+  --color-critical: var(--rescue-critical);
+  --color-critical-container: var(--rescue-critical-container);
+  --color-urgent: var(--rescue-urgent);
+  --color-urgent-container: var(--rescue-urgent-container);
+  --color-support: var(--rescue-support);
+  --color-support-container: var(--rescue-support-container);
+  --color-success: var(--rescue-success);
+  --color-success-container: var(--rescue-success-container);
+  --color-warning: var(--rescue-warning);
+  --color-warning-container: var(--rescue-warning-container);
+  --color-neutral: var(--rescue-neutral);
+  --color-neutral-container: var(--rescue-neutral-container);
+
+  --radius-none: 0px;
+  --radius-small: 6px;
+  --radius-medium: 10px;
+  --radius-large: 14px;
+  --radius-full: 999px;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+}

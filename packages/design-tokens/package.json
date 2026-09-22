@@ -9,10 +9,11 @@
     "build": "echo \"@rescue-alert/design-tokens: nothing to build yet\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"@rescue-alert/design-tokens: no tests yet\""
+    "test": "vitest run"
   },
   "devDependencies": {
     "@rescue-alert/config": "workspace:*",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
   }
 }

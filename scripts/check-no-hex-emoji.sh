@@ -10,7 +10,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 SOURCE_GLOBS=(apps packages supabase)
-EXCLUDE_DIRS=(node_modules dist .next .expo .turbo coverage packages/design-tokens)
+# --exclude-dir matches a single path component (basename), never a
+# compound path - "packages/design-tokens" here would silently match
+# nothing and the whole package would leak through unexcluded. Proven
+# directly: this check passed for months only because no hex value
+# existed in packages/design-tokens until Part 4 added one.
+EXCLUDE_DIRS=(node_modules dist .next .expo .turbo coverage design-tokens)
 
 exclude_args=()
 for dir in "${EXCLUDE_DIRS[@]}"; do

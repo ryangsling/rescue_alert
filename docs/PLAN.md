@@ -24,8 +24,8 @@ Additionally, for this project specifically:
 
 ## Current implementation status
 
-- **Completed:** Parts 1-2, 3-4 (both with disclosed gaps - see each part's notes)
-- **Pending:** Parts 5 through 20
+- **Completed:** Parts 1-2, 3-5 (3-5 with disclosed gaps - see each part's notes)
+- **Pending:** Parts 6 through 20
 
 ## Confirmed design decisions
 
@@ -186,37 +186,37 @@ Confirm to the agent: "Supabase ready"
 
 ## Part 5 - Rescue-specific components
 
-**Status:** Pending
+**Status:** Complete, with disclosed gaps carried forward (see notes)
 
 ### Tasks
 
-- [ ] Status chip carrying semantic background, icon, and text together - the signature element, used identically everywhere urgency appears
-- [ ] Segmented urgency selector for the four levels in PRD section 8.2
-- [ ] Rescue case card with all eight required elements from DESIGN.md section 11.5, in compact, detailed, map preview, activity, and closed outcome variants
-- [ ] Case header per DESIGN.md section 11.6 with a persistent primary action that does not obscure content
-- [ ] Official update component with left semantic accent, actor identity and role, timestamp, and update type, visually distinct from comments
-- [ ] Responder card per DESIGN.md section 11.8, hiding phone numbers and locations without authorization
-- [ ] Safety callout in critical, warning, information, and positive variants
-- [ ] Location field and static map preview
-- [ ] Media picker with upload, retry, and failure states
-- [ ] Needs selector and outcome selector
-- [ ] Offline draft indicator distinguishing pending local state from confirmed server state
-- [ ] Graphic media cover that blurs by default and requires an explicit reveal
-- [ ] Empty, loading, offline, permission-denied, partial failure, and full error states as reusable components
+- [x] Status chip carrying semantic background, icon, and text together - the signature element, used identically everywhere urgency appears - `StatusChip`, six tones matching design-tokens' status colors exactly
+- [x] Segmented urgency selector for the four levels in PRD section 8.2 - `UrgencySelector`
+- [x] Rescue case card with all eight required elements from DESIGN.md section 11.5 - `RescueCaseCard`, one component with a `variant` prop for the five layouts (compact, detailed, map-preview, activity, closed), matching `Button`'s established pattern rather than five near-duplicate files
+- [x] Case header per DESIGN.md section 11.6 with a persistent primary action that does not obscure content - `CaseHeader`; the primary action itself lives outside it (a sticky region, per DESIGN.md's own elevation model), so it structurally cannot be obscured by header content
+- [x] Official update component with left semantic accent, actor identity and role, timestamp, and update type, visually distinct from comments - `OfficialUpdate`, plus `Timeline` (the ordered-list container DESIGN.md section 20 item 14 names alongside it - initially missed, caught on a deliberate re-check against DESIGN.md's exact 18-item list, added same-day)
+- [x] Responder card per DESIGN.md section 11.8, hiding phone numbers and locations without authorization - `ResponderCard`, with a defense-in-depth `isAuthorizedViewer` check independent of the RLS layer already enforcing this server-side
+- [x] Safety callout in critical, warning, information, and positive variants - `SafetyCallout`
+- [x] Location field and static map preview - `LocationField`. **Scope note:** static preview only, by design - the real interactive map is explicitly Part 9's job (MapLibre is not installed yet)
+- [x] Media picker with upload, retry, and failure states - `MediaPicker`. **Scope note:** presentational only - actual capture/compression/upload (CASE-004/005, expo-image-picker, Supabase Storage) is Part 8's job
+- [x] Needs selector and outcome selector - `NeedsSelector` and `OutcomeSelector`, both driven by the real `assistance_type`/`closure_outcome` Postgres enums from Part 3 via `@rescue-alert/types`, not hand-written string unions
+- [x] Offline draft indicator distinguishing pending local state from confirmed server state - `DraftIndicator`, four states (pending/syncing/synced/failed)
+- [x] Graphic media cover that blurs by default and requires an explicit reveal - `GraphicMediaCover`. **Real bug caught before shipping:** the first version rendered the actual media underneath a translucent scrim (~55% opacity), which still showed the graphic content through the "cover" - the media is now not rendered in the tree at all until revealed
+- [x] Empty, loading, offline, permission-denied, partial failure, and full error states as reusable components - `LoadingState` (structurally different - has a spinner) plus `StateView` covering the other five as one component with a `variant` prop, since they share the same icon+heading+message+action shape
 
 ### Tests
 
-- [ ] Status is never conveyed by colour alone - each chip asserts presence of icon and text
-- [ ] Graphic media stays covered until explicitly revealed, verified by interaction test
-- [ ] Responder card omits phone number for an unauthorized viewer
-- [ ] Case card renders correctly with বাংলা, English, and mixed-language content at long label lengths
-- [ ] Draft indicator distinguishes pending from confirmed states
+- [x] Status is never conveyed by colour alone - each chip asserts presence of icon and text - all six tones tested via a direct SVG-presence query (RNTL's parent/child traversal proved unreliable across composite component boundaries in this file - documented in-line, robust query used instead)
+- [x] Graphic media stays covered until explicitly revealed, verified by interaction test - and proves the media is absent from the tree beforehand, not just visually covered, which is what caught the bug above
+- [x] Responder card omits phone number for an unauthorized viewer - including the case where a caller mistakenly passes a phone number anyway (defaults to hidden)
+- [x] Case card renders correctly with বাংলা, English, and mixed-language content at long label lengths - real Bengali text rendered and asserted on, not just typed as a prop and ignored
+- [x] Draft indicator distinguishes pending from confirmed states - both by text and by a genuinely different className
 
 ### Success criteria
 
-- [ ] All 18 components in DESIGN.md section 20 exist with tests
-- [ ] Every component passes the section 19 quality checklist
-- [ ] No component displays likes, popularity, or report counts
+- [x] All 18 components in DESIGN.md section 20 exist with tests - the count spans both Part 4 (items 1-6) and Part 5 (items 7-18); verified against the exact list, not assumed, which is what caught the missing Timeline component
+- [~] Every component passes the section 19 quality checklist - same disclosed limits as Part 4 (বাংলা content-fit is spot-checked for `RescueCaseCard` specifically, not every component; TalkBack/VoiceOver/real keyboard nav cannot be verified from this environment)
+- [x] No component displays likes, popularity, or report counts - asserted directly in `RescueCaseCard`'s test, not just avoided by omission
 
 ## Part 6 - Localization
 

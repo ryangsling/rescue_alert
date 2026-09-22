@@ -25,6 +25,13 @@ export {
   // Not in DESIGN.md's list, but needed for dismissible Banner/Toast/
   // Dialog/Sheet controls - verified to exist the same way as the rest.
   X as DismissIcon,
+  // Not in DESIGN.md's list - needed for the empty/offline/error state
+  // components (Part 5), same verification standard as the rest.
+  Inbox as EmptyStateIcon,
+  WifiOff as OfflineIcon,
+  ServerCrash as ErrorIcon,
+  Share2 as ShareIcon,
+  Flag as ReportIcon,
 } from "lucide-react-native";
 
 export type { LucideIcon, LucideProps } from "lucide-react-native";

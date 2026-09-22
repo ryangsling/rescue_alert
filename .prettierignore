@@ -1,0 +1,7 @@
+# Hand-authored specification documents - not reformatted by tooling.
+PRD.md
+design/DESIGN.md
+docs/PLAN.md
+AGENTS.md
+
+pnpm-lock.yaml

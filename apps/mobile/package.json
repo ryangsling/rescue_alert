@@ -1,0 +1,15 @@
+{
+  "name": "@rescue-alert/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo \"@rescue-alert/mobile: not yet scaffolded\"",
+    "lint": "echo \"@rescue-alert/mobile: not yet scaffolded\"",
+    "typecheck": "echo \"@rescue-alert/mobile: not yet scaffolded\"",
+    "test": "echo \"@rescue-alert/mobile: not yet scaffolded\"",
+    "dev": "echo \"@rescue-alert/mobile: not yet scaffolded\""
+  },
+  "devDependencies": {
+    "@rescue-alert/config": "workspace:*"
+  }
+}

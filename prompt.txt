@@ -1,0 +1,27 @@
+I am starting a new software project. Here is a one-paragraph description of what I want to build:
+
+[read PRD.md]
+
+---
+
+You will find two template files and one design files in this repo:
+- AGENTS.md (project root)
+- docs/PLAN.md
+- design/DESIGN.md
+
+Your first and only task right now is to rewrite both of these files to match my specific project. Do not write any code yet.
+
+For AGENTS.md:
+- Replace all placeholder sections with real, specific content for this project
+- Fill in business requirements, key features, MVP limitations, technical decisions, starting point, design system (get context from design/DESIGN.md), and any project-specific coding standards
+- Make reasonable technical choices (framework, database, packaging) that suit the project type and scale
+- Keep the coding standards section exactly as written — do not change it
+
+For docs/PLAN.md:
+- Replace all placeholders with a real, phase-by-phase implementation plan for this specific project
+- Part 1 must always be the planning hard gate (keep its structure exactly)
+- Add as many parts as needed to cover the full MVP build, each with: Tasks, Tests, and Success criteria
+- Make the plan granular enough that any engineer could execute it phase-by-phase without ambiguity
+- Wherever a part requires a manual human action (account creation, API key setup, external dashboard config, deployment, etc.), insert a PAUSE block immediately before or after that part — list every manual step with exact URLs and file paths, then instruct the developer to confirm before the agent continues; do NOT attempt to automate or skip these steps
+
+When done, present both updated files in full and wait for my explicit approval before writing any code.

@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+.next/
+.expo/
+.turbo/
+
+# Expo / React Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.expo-shared/
+google-services.json
+
+# Testing
+coverage/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Claude Code local settings
+.claude/settings.local.json

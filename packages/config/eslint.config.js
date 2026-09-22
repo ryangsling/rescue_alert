@@ -1,6 +1,7 @@
 // @ts-check
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import globals from "globals";
 
 /**
  * Shared ESLint flat config for Rescue Alert workspaces.
@@ -20,6 +21,14 @@ export default tseslint.config(
           message: "No emojis in code, comments, or UI copy.",
         },
       ],
+    },
+  },
+  {
+    // CommonJS config files (jest.config.cjs, babel.config.js, ...)
+    // reference module/require/__dirname directly.
+    files: ["**/*.config.js", "**/*.config.cjs"],
+    languageOptions: {
+      globals: globals.node,
     },
   },
   {

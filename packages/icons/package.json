@@ -1,0 +1,28 @@
+{
+  "name": "@rescue-alert/icons",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "echo \"@rescue-alert/icons: nothing to build yet\"",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"@rescue-alert/icons: no tests yet\""
+  },
+  "peerDependencies": {
+    "react": "19.2.3"
+  },
+  "dependencies": {
+    "lucide-react-native": "^1.47.0",
+    "react-native-svg": "~15.15.5"
+  },
+  "devDependencies": {
+    "@rescue-alert/config": "workspace:*",
+    "@types/react": "~19.2.2",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "typescript": "^5.9.0"
+  }
+}

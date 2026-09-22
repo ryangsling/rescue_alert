@@ -6,17 +6,32 @@
  */
 import type { ColorTheme, StatusColors } from "./colors";
 
+function toKebabCase(key: string): string {
+  return key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
 export function themeToCssVariables(
   theme: ColorTheme & StatusColors,
   prefix = "rescue",
 ): string {
   return Object.entries(theme)
-    .map(([key, value]) => {
-      const kebab = key.replace(
-        /[A-Z]/g,
-        (letter) => `-${letter.toLowerCase()}`,
-      );
-      return `  --${prefix}-${kebab}: ${value};`;
-    })
+    .map(([key, value]) => `  --${prefix}-${toKebabCase(key)}: ${value};`)
     .join("\n");
+}
+
+/**
+ * Same values as themeToCssVariables, as a plain object rather than a
+ * CSS string - what NativeWind's vars() runtime helper expects for
+ * native (non-web) CSS custom properties.
+ */
+export function themeToVarsObject(
+  theme: ColorTheme & StatusColors,
+  prefix = "rescue",
+): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(theme).map(([key, value]) => [
+      `--${prefix}-${toKebabCase(key)}`,
+      value,
+    ]),
+  );
 }

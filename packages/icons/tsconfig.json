@@ -1,0 +1,9 @@
+{
+  "extends": "@rescue-alert/config/tsconfig/react.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "react-native"
+  },
+  "include": ["src"]
+}

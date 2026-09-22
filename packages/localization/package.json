@@ -9,10 +9,20 @@
     "build": "echo \"@rescue-alert/localization: nothing to build yet\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"@rescue-alert/localization: no tests yet\""
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "19.2.3"
   },
   "devDependencies": {
     "@rescue-alert/config": "workspace:*",
-    "typescript": "^5.9.0"
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "~19.2.2",
+    "@types/react-dom": "~19.2.2",
+    "jsdom": "^27.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
   }
 }

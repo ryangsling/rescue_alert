@@ -1,5 +1,5 @@
 {
-  "extends": "@rescue-alert/config/tsconfig/base.json",
+  "extends": "@rescue-alert/config/tsconfig/react.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src"

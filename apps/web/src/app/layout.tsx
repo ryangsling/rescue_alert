@@ -3,6 +3,7 @@ import { Inter, Noto_Sans_Bengali } from "next/font/google";
 import type { PropsWithChildren } from "react";
 import "./globals.css";
 import { ThemeVars } from "./theme-vars";
+import { AppLocaleProvider } from "./locale-provider";
 
 // next/font self-hosts at build time - no runtime request to Google,
 // matching DESIGN.md section 6.1's "do not depend on downloading
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: PropsWithChildren) {
       <head>
         <ThemeVars />
       </head>
-      <body className="min-h-full font-sans antialiased">{children}</body>
+      <body className="min-h-full font-sans antialiased">
+        <AppLocaleProvider>{children}</AppLocaleProvider>
+      </body>
     </html>
   );
 }

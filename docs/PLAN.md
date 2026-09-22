@@ -220,31 +220,31 @@ Confirm to the agent: "Supabase ready"
 
 ## Part 6 - Localization
 
-**Status:** Pending
+**Status:** Complete, with disclosed gaps
 
 ### Tasks
 
-- [ ] Build `packages/localization` with বাংলা and English catalogues and a typed key accessor
-- [ ] Use complete localized sentences with interpolation; never concatenate translated fragments
-- [ ] Implement in-app language switching without reinstall, persisted per user
-- [ ] Format dates, times, and numbers per Bangladesh conventions for the selected language
-- [ ] Keep phone normalization separate from display formatting
-- [ ] Store canonical administrative identifiers separately from translated labels
-- [ ] Add a CI check failing when a key exists in one catalogue but not the other
-- [ ] Ensure system notifications and statuses resolve in the recipient's preferred language
+- [x] Build `packages/localization` with বাংলা and English catalogues and a typed key accessor - `catalogs/en.ts` is canonical, `catalogs/bn.ts` is typed `Record<keyof typeof en, string>`, `translate(locale, key, params?)` is the sole accessor
+- [x] Use complete localized sentences with interpolation; never concatenate translated fragments - every catalogue value is a full sentence; `translate()` is documented as the only substitution mechanism; verified by grep that no call site concatenates `translate()` output
+- [x] Implement in-app language switching without reinstall, persisted per user - `LocaleProvider`/`useLocale` wired into both app shells; verified live in a real browser (Playwright: toggle switches text in place, survives a full page reload via `localStorage`). Gap: persistence is per-device (`localStorage`/`AsyncStorage`), not yet per authenticated user profile - there is no user account to attach a preference to until Part 7. Revisit when Part 7 adds a profile `preferred_locale` column, at which point `LocaleProvider`'s storage adapter should read/write through it instead.
+- [x] Format dates, times, and numbers per Bangladesh conventions for the selected language - `format.ts`; `bn-BD` and `en-IN` (not `en-US`/`en-BD`) chosen after directly verifying real `Intl` output, documented in-code
+- [x] Keep phone normalization separate from display formatting - `phone.ts`'s `formatPhoneForDisplay` is display-only and never feeds back into the normalized value the Part 3 DB constraint enforces
+- [x] Store canonical administrative identifiers separately from translated labels - `administrativeAreas.ts`'s `id` field (e.g. `"dhaka"`) is the canonical identifier; `bn`/`en` are display-only. District/upazila level is out of scope for the MVP pilot (disclosed in-code; PRD section 30 lists it as a future dependency)
+- [x] Add a CI check failing when a key exists in one catalogue but not the other - enforced twice: `bn.ts`'s `Record<keyof typeof en, string>` typing fails `tsc` on a missing or extra key (excess-property checking), and `catalogs.test.ts` asserts key-set equality at runtime, both running in `pnpm turbo run typecheck test`, which CI runs
+- [ ] Ensure system notifications and statuses resolve in the recipient's preferred language - not yet actionable: notification dispatch doesn't exist until Part 11, and there is no stored per-user language preference until Part 7. Deferred; flagged so Part 11 wires it up rather than defaulting silently to English.
 
 ### Tests
 
-- [ ] Every key exists in both catalogues, asserted mechanically
-- [ ] Language switch re-renders without restart and persists across sessions
-- [ ] User-generated content retains its original language regardless of interface language
-- [ ] Bengali conjuncts and vowel marks render without clipping at the defined line heights
+- [x] Every key exists in both catalogues, asserted mechanically - `catalogs.test.ts`
+- [x] Language switch re-renders without restart and persists across sessions - `LocaleContext.test.tsx` (unit, fake storage) and a real `apps/web` `next dev` browser session via Playwright (toggle + full reload)
+- [ ] User-generated content retains its original language regardless of interface language - not independently testable yet, since no user-generated-content feature exists before Part 8. Architectural guarantee in place: `translate()` only ever accepts a fixed `TranslationKey`, never an arbitrary string, so there is no code path through which this package could translate user text even by mistake. Add a concrete test once Part 8 stores real user text.
+- [ ] Bengali conjuncts and vowel marks render without clipping at the defined line heights - `catalogs.test.ts` proves every bn value contains real Bengali Unicode codepoints (not mojibake or untranslated ASCII), but actual visual non-clipping requires rendering on a real engine against `packages/design-tokens`' line-height tokens, which this headless package cannot verify. Deferred to Part 17's typography/WCAG pass, done with real rendering.
 
 ### Success criteria
 
-- [ ] Every core workflow is fully usable in both languages
-- [ ] No concatenated translation fragments exist in the codebase
-- [ ] The catalogue parity check is enforced in CI
+- [x] Every core workflow is fully usable in both languages - scoped to what exists today: both app shells fully switch language live, with all current on-screen text (including the DESIGN.md 17.2 / PRD 12.5 verbatim strings) sourced from the catalogues. No real feature workflows exist yet (Parts 7-20 build them); re-verify this criterion as each part's screens land, since new UI copy must use `translate()` from the start, not raw strings.
+- [x] No concatenated translation fragments exist in the codebase - verified by grep across every `translate(` call site
+- [x] The catalogue parity check is enforced in CI - `catalogs.test.ts` runs under `pnpm turbo run test`, which `.github/workflows/ci.yml`'s Test step runs
 
 ## Part 7 - Authentication and onboarding
 

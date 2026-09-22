@@ -24,8 +24,8 @@ Additionally, for this project specifically:
 
 ## Current implementation status
 
-- **Completed:** Parts 1-2
-- **Pending:** Parts 3 through 20
+- **Completed:** Parts 1-2, 3 (with disclosed gaps - see Part 3 notes)
+- **Pending:** Parts 4 through 20
 
 ## Confirmed design decisions
 
@@ -114,38 +114,40 @@ Confirm to the agent: "Supabase ready"
 
 ## Part 3 - Database schema, PostGIS, and Row Level Security
 
-**Status:** Pending
+**Status:** Complete, with disclosed gaps carried forward (see notes)
 
 ### Tasks
 
-- [ ] Create the Supabase project and enable the `postgis` extension
-- [ ] Write migrations for the PRD section 18.1 entities, grouped: identity (`profiles`, `user_private_details`, `user_devices`, `notification_preferences`, `volunteer_capabilities`, `user_availability`), cases (`rescue_cases`, `rescue_case_locations`, `rescue_media`, `case_status_history`, `case_responses`, `case_needs`, `case_updates`, `case_comments`, `comment_replies`, `case_watchers`, `rescue_outcomes`), organizations (`organizations`, `organization_members`, `organization_services`, `organization_availability`, `clinics`, `shelters`, `foster_profiles`), reputation (`contributions`, `achievements`, `user_achievements`), and governance (`content_reports`, `moderation_actions`, `account_restrictions`, `audit_logs`)
-- [ ] Implement `rescue_cases` with the exact field list in PRD section 18.2, including separate `location` and `approximate_location` geography columns
-- [ ] Add enums for incident type, urgency, case status, exceptional states, and closure outcome from PRD sections 8 and 9
-- [ ] Add indexes from PRD section 18.4: GiST on active-case geography, GiST on volunteer alert geography, partial index on open cases, indexes on status and creation time, creator and responder relationships, unique index on active device push tokens
-- [ ] Write a PostgreSQL function enforcing legal status transitions that writes `case_status_history` atomically, rejecting illegal transitions
-- [ ] Write a function deriving `approximate_location` from `location` server-side, never on the client
-- [ ] Enable RLS on every table with a deny-by-default policy, then add narrow policies per PRD section 21.1, implementing the confirmed exact-location rule
-- [ ] Create a public-safe view exposing only shareable case fields for anonymous access
-- [ ] Write `supabase/seed.sql` with Bangladesh administrative areas, incident types, and a small set of test cases and users
-- [ ] Generate database types into `packages/types` and wire a script that regenerates them
-- [ ] Write Supabase project URL, anon key, and service-role key into local `.env` files and into GitHub Actions secrets with `gh secret set`
+- [x] Create the Supabase project and enable the `postgis` extension - project `taiemahdkbnsgegvjafa`, ap-southeast-1, under Team Bara
+- [x] Write migrations for the PRD section 18.1 entities, grouped: identity, cases, organizations, reputation, governance - all 34 tables created, verified with `list_tables`
+- [x] Implement `rescue_cases` with the exact field list in PRD section 18.2, including separate `location` and `approximate_location` geography columns
+- [x] Add enums for incident type, urgency, case status, exceptional states, and closure outcome from PRD sections 8 and 9
+- [x] Add indexes from PRD section 18.4 - active-case GiST, approximate-location GiST, location-history GiST, partial open-case index, status/creation index, creator/coordinator/org/responder indexes, unique active-device-token index, plus 30 FK-covering indexes added after the performance advisor flagged them. **Gap:** no separate "volunteer alert geography" GiST index - the MVP schema has no stored volunteer point (matching uses `alert_radius_km` against the case location, not a saved volunteer coordinate); add one if/when Part 11 introduces a stored alert point
+- [x] Write a PostgreSQL function enforcing legal status transitions that writes `case_status_history` atomically, rejecting illegal transitions - `transition_case_status()`, backed by a data-driven `case_status_transitions` graph and a `guard_status_column` trigger that blocks any direct `UPDATE` of `status`
+- [x] Write a function deriving `approximate_location` from `location` server-side, never on the client - `derive_approximate_location()` trigger, snaps to ~100m
+- [x] Enable RLS on every table with a deny-by-default policy, then add narrow policies per PRD section 21.1, implementing the confirmed exact-location rule - see verification notes below; this required three real bug fixes, not just policy authoring
+- [x] Create a public-safe view exposing only shareable case fields for anonymous access - implemented as `rescue_cases_public()`, a `security definer` function, not a bare view. A plain view over an RLS table runs with the owner's permissions with no explicit signal that it's intentional, which Supabase's own security linter flags as ERROR-level (`security_definer_view`); the function form is the sanctioned mechanism for exactly this case and resolves that finding
+- [x] Write `supabase/seed.sql` with animal types, achievements, and a small set of gated dev-only test cases/users. **Gap:** no Bangladesh administrative-area (division/district/upazila) reference table - `division`/`district`/`upazila_or_thana` are free-text columns; PRD section 30 itself lists a proper administrative-boundary dataset as a future dependency, not yet available
+- [x] Generate database types into `packages/types` and wire a script that regenerates them - `packages/types/src/database.ts`, typechecks clean
+- [~] Write Supabase project URL, anon key, and service-role key into local `.env` files and into GitHub Actions secrets - URL and publishable/anon key done in both places. **The service-role key was not set** - no Supabase MCP tool exposes it (deliberate on Supabase's part). Manual step: fetch it from https://supabase.com/dashboard/project/taiemahdkbnsgegvjafa/settings/api-keys and run `gh secret set SUPABASE_SERVICE_ROLE_KEY`, then fill it into `apps/mobile/.env.local` / `apps/web/.env.local` (both gitignored)
 
 ### Tests
 
-- [ ] RLS test suite covering all seven roles against every exposed table, asserting both permitted and denied access
-- [ ] Anonymous access returns only the public view and never exact coordinates
-- [ ] A signed-in non-responder cannot read `location`; an accepted responder can
-- [ ] Status transition function rejects every illegal transition and records history for every legal one
-- [ ] Geospatial query returns the correct volunteers for a seeded case at known distances
-- [ ] Generated types compile against the migrations with no drift
+- [~] RLS test suite covering all seven roles against every exposed table - **not exhaustive**. Proved the mechanism and the two highest-risk scenarios (anon safety, exact-location gating) rigorously with real `SET ROLE anon/authenticated` + `request.jwt.claim.sub` sessions (never the `postgres` superuser context used by `execute_sql`, which bypasses RLS entirely and would have made any test meaningless - confirmed `rolbypassrls = true` for `postgres` directly). Full per-table, per-role coverage is Part 19's own explicit task; recommend a pgTAP suite there
+- [x] Anonymous access returns only the public view and never exact coordinates - proven: `anon` gets 0 rows on the raw table, and full data via `rescue_cases_public()`, whose return type has no exact-location column at all
+- [x] A signed-in non-responder cannot read `location`; an accepted responder can - proven after fixing three real bugs (see commit message on `main`): the exact-location column is unreadable by anyone via ordinary queries (`REVOKE SELECT (location)`), accessible only through `get_case_exact_location()`, which was tested denying a bystander and permitting the creator, the accepted responder, and a moderator
+- [x] Status transition function rejects every illegal transition and records history for every legal one - proven: a legal transition, an illegal one (rejected with the exact status pair in the error), and the moderator gate (rejected for a non-moderator, then succeeded for one), with `case_status_history` and `closed_at` checked after each
+- [x] Geospatial query returns the correct volunteers for a seeded case at known distances - proven the `ST_DWithin` mechanism the Part 11 matching query will use: true at 2km against a 5km radius, false at 20km. The MVP schema has no stored volunteer point yet (see index gap above), so this tests the distance mechanism rather than a live end-to-end match
+- [x] Generated types compile against the migrations with no drift - `tsc --noEmit` clean in `packages/types`
 
 ### Success criteria
 
-- [ ] Migrations apply cleanly to an empty database and are reversible
-- [ ] Every exposed table has RLS enabled, verified by a query against `pg_tables`
-- [ ] Exact coordinates are unreachable by any unauthorized role in tests
-- [ ] Type generation is reproducible and committed
+- [~] Migrations apply cleanly to an empty database and are reversible - **not verified**. Migrations were authored incrementally against the live project via the Supabase MCP tools, then pulled back from `supabase_migrations.schema_migrations` into `supabase/migrations/*.sql` for version control - they were never replayed against a fresh empty database, and no down-migrations exist. Recommend testing a fresh replay (e.g. via a Supabase branch) before Part 20's production deploy
+- [x] Every exposed table has RLS enabled, verified by a query against `pg_tables` - confirmed via the security advisor (0 `rls_disabled_in_public` findings after fixing the one real gap found, `case_status_transitions`)
+- [x] Exact coordinates are unreachable by any unauthorized role in tests - proven, see Tests above
+- [x] Type generation is reproducible and committed - `packages/types/generate` script documented (requires `supabase` CLI + `SUPABASE_PROJECT_ID`); output committed
+
+**Known, disclosed trade-offs deferred to Part 18** (performance hardening - both are Supabase advisor WARN-level, no correctness or security impact at pilot scale): 14 RLS helper functions are callable via RPC by `anon`/`authenticated` (inherent to using them inside RLS policies - they return only booleans about relationships, never raw data); 34 policies re-evaluate `auth.uid()` per row instead of `(select auth.uid())`.
 
 ## Part 4 - Rescue UI foundation
 

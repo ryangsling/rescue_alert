@@ -24,8 +24,8 @@ Additionally, for this project specifically:
 
 ## Current implementation status
 
-- **Completed:** Part 1
-- **Pending:** Parts 2 through 20
+- **Completed:** Parts 1-2
+- **Pending:** Parts 3 through 20
 
 ## Confirmed design decisions
 
@@ -70,32 +70,34 @@ Three identities exist on this machine - GitHub `ryangsling`, Vercel `jamesahsan
 
 ## Part 2 - Monorepo and toolchain foundation
 
-**Status:** Pending
+**Status:** Complete
 
 ### Tasks
 
-- [ ] Confirm with the user which GitHub account owns the repository and which Vercel account owns the project
-- [ ] `git init`, add `.gitignore` covering `node_modules`, `.env*`, `.expo`, `.next`, `dist`, `.turbo`
-- [ ] Create the repository with `gh repo create` as a private repository, push the existing documentation as the first commit
-- [ ] Create the `pnpm-workspace.yaml` layout from PRD section 17.3: `apps/mobile`, `apps/web`, `packages/api`, `packages/types`, `packages/validation`, `packages/localization`, `packages/design-tokens`, `packages/ui`, `packages/config`, `supabase/`
-- [ ] Add Turborepo with `build`, `lint`, `typecheck`, `test` pipelines and correct task dependencies
-- [ ] Add the shared TypeScript base config, ESLint flat config, and Prettier config in `packages/config`
-- [ ] Add Vitest at the workspace root with coverage reporting configured for the 80% threshold
-- [ ] Add a GitHub Actions workflow running lint, typecheck, test, and build on pull requests
-- [ ] Add an ESLint rule or CI check that fails on raw hex colours and emojis in source files
+- [x] Confirm with the user which GitHub account owns the repository and which Vercel account owns the project
+- [x] `git init`, add `.gitignore` covering `node_modules`, `.env*`, `.expo`, `.next`, `dist`, `.turbo`
+- [x] Create the repository with `gh repo create` as a private repository, push the existing documentation as the first commit
+- [x] Create the `pnpm-workspace.yaml` layout from PRD section 17.3: `apps/mobile`, `apps/web`, `packages/api`, `packages/types`, `packages/validation`, `packages/localization`, `packages/design-tokens`, `packages/ui`, `packages/config`, `supabase/`
+- [x] Add Turborepo with `build`, `lint`, `typecheck`, `test` pipelines and correct task dependencies
+- [x] Add the shared TypeScript base config, ESLint flat config, and Prettier config in `packages/config`
+- [x] Add Vitest at the workspace root with coverage reporting configured for the 80% threshold
+- [x] Add a GitHub Actions workflow running lint, typecheck, test, and build on pull requests
+- [x] Add an ESLint rule or CI check that fails on raw hex colours and emojis in source files
 
 ### Tests
 
-- [ ] `pnpm install` succeeds from a clean checkout
-- [ ] `pnpm turbo run lint typecheck test build` passes with every workspace present
-- [ ] A deliberately failing placeholder test causes the GitHub Actions run to fail, proving CI is wired
-- [ ] The emoji and raw-hex checks reject a seeded violation
+- [x] `pnpm install` succeeds from a clean checkout
+- [x] `pnpm turbo run lint typecheck test build` passes with every workspace present
+- [x] A deliberately failing placeholder test causes the GitHub Actions run to fail, proving CI is wired - verified via a throwaway PR (#1, closed without merging): CI failed precisely at the Test step with the seeded assertion error and correctly never reached Build
+- [x] The emoji and raw-hex checks reject a seeded violation - verified locally against seeded hex and emoji violations in `packages/api`, both rejected with exit 1, then cleaned up
 
 ### Success criteria
 
-- [ ] Repository exists under the confirmed account with the documentation committed
-- [ ] Every workspace package resolves and builds
-- [ ] CI runs green on the first pull request
+- [x] Repository exists under the confirmed account with the documentation committed - https://github.com/ryangsling/rescue_alert (private, owned by ryangsling)
+- [x] Every workspace package resolves and builds - `pnpm turbo run lint typecheck test build` passes 32/32 tasks
+- [x] CI runs green on the first pull request - proven on the throwaway PR once the Node version bug (below) was fixed; the definitive green run is on `main` at commit `c84c058`, since Part 2 has no standalone feature PR of its own
+
+**Bug found and fixed during verification:** the CI workflow pinned Node 20, but `pnpm@11.9.0` requires Node >=22.13 internally (`node:sqlite`). The job failed during `pnpm/action-setup` itself, before any project code ran. Fixed by bumping `node-version` to 22 in `.github/workflows/ci.yml` and correcting `engines.node` in the root `package.json` to `>=22.13`.
 
 ### PAUSE 1 - Before Part 3 (Supabase project parameters)
 ```

@@ -22,6 +22,9 @@ export {
   Clock as ClockIcon,
   CheckCircle2 as CheckCircleIcon,
   EyeOff as PrivateIcon,
+  // Not in DESIGN.md's list, but needed for dismissible Banner/Toast/
+  // Dialog/Sheet controls - verified to exist the same way as the rest.
+  X as DismissIcon,
 } from "lucide-react-native";
 
 export type { LucideIcon, LucideProps } from "lucide-react-native";

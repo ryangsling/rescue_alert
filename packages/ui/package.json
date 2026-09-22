@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@rescue-alert/design-tokens": "workspace:*",
+    "@rescue-alert/icons": "workspace:*",
     "lucide-react-native": "^1.47.0",
     "nativewind": "^4.2.7",
     "react-native-safe-area-context": "~5.7.0",

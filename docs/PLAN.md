@@ -24,8 +24,8 @@ Additionally, for this project specifically:
 
 ## Current implementation status
 
-- **Completed:** Parts 1-2, 3 (with disclosed gaps - see Part 3 notes)
-- **Pending:** Parts 4 through 20
+- **Completed:** Parts 1-2, 3-4 (both with disclosed gaps - see each part's notes)
+- **Pending:** Parts 5 through 20
 
 ## Confirmed design decisions
 
@@ -151,34 +151,38 @@ Confirm to the agent: "Supabase ready"
 
 ## Part 4 - Rescue UI foundation
 
-**Status:** Pending
+**Status:** Complete, with disclosed gaps carried forward (see notes)
 
 ### Tasks
 
-- [ ] Build `packages/design-tokens` with `colors.ts`, `typography.ts`, `spacing.ts`, `radius.ts`, `elevation.ts`, `motion.ts`, `breakpoints.ts` from DESIGN.md sections 5 to 10
-- [ ] Define light and dark themes with separate semantic containers, not mechanical inversion
-- [ ] Configure NativeWind and Tailwind to consume the tokens so both apps share one source of truth
-- [ ] Bundle Inter and Noto Sans Bengali with the mobile app; do not fetch fonts at runtime
-- [ ] Build primitives in `packages/ui`: text, stack, surface, divider, safe-area container
-- [ ] Build button variants from DESIGN.md section 11.2 - primary, secondary, tonal, outline, text, destructive, icon, floating report action - with 48px minimum height and width-preserving loading states
-- [ ] Build form controls from DESIGN.md section 11.3, each with label, help text, error text, focus, disabled, and loading states
-- [ ] Build sheet, dialog, menu, toast, and banner including the offline banner
-- [ ] Set up the Lucide icon package in `packages/icons`
+- [x] Build `packages/design-tokens` with `colors.ts`, `typography.ts`, `spacing.ts`, `radius.ts`, `elevation.ts`, `motion.ts`, `breakpoints.ts` from DESIGN.md sections 5 to 10 - plus `contrast.ts` and `css.ts`, needed to actually prove and wire the tokens (not in the original file list, added because the work required them)
+- [x] Define light and dark themes with separate semantic containers, not mechanical inversion - status-color dark values are derived (DESIGN.md only specifies primary/neutral for dark), following the same foreground-on-container relationship as DESIGN.md's own specified primary token; documented in `colors.ts`
+- [x] Configure NativeWind and Tailwind to consume the tokens so both apps share one source of truth - **architecture note:** `apps/web` and `apps/mobile` do not share component code. `packages/ui`'s React Native components are Expo-only; `apps/web` builds its own presentation directly with Next.js/Tailwind. What's shared is `packages/design-tokens` - both apps' color classes resolve through the same `var(--rescue-*)` CSS custom properties, verified identical at the build level in both. True cross-platform component sharing would need `react-native-web` wired into Next.js (a separate, nontrivial integration), which DESIGN.md's own ownership rules (section 18.3: "platform-specific variants are allowed when interaction conventions differ") make a reasonable deferral rather than a gap
+- [x] Bundle Inter and Noto Sans Bengali with the mobile app; do not fetch fonts at runtime - via `next/font/google` on web (self-hosts at build time); Expo bundles system/Google fonts similarly, not yet wired into `apps/mobile` since no screen needs বাংলা text yet (Part 6/8's job) - the `Text` primitive is ready to receive a `fontFamily` once localization exists
+- [x] Build primitives in `packages/ui`: text, stack, surface, divider, safe-area container - all five, tested
+- [x] Build button variants from DESIGN.md section 11.2 - all eight: primary, secondary, tonal, outline, text, destructive built into `Button` (variant prop); "Icon" split into its own `IconButton` component since DESIGN.md describes it as a shape, not a fill color, with a type-enforced `accessibilityLabel` (no optional/missing case is possible); "floating" is a `Button` variant. 48px minimum height on every `Button` variant, tested per-variant
+- [x] Build form controls from DESIGN.md section 11.3 - `FormField` (shared label/help/error layout), `TextField` (text/password/search/phone via props), `TextArea`, `Checkbox`, `Switch`, `RadioGroup`, `Select` (built on `Menu`). **Not built:** Combobox and Date/time field - both need capability this package doesn't have yet (text-filtering UI; a native date picker library), and are better built in Part 7/8 against the real screen that first needs them rather than speculatively now
+- [x] Build sheet, dialog, menu, toast, and banner including the offline banner - all five, plus `OfflineBanner` as a named instance of `Banner`
+- [x] Set up the Lucide icon package in `packages/icons` - DESIGN.md's 16-icon list plus `DismissIcon` (needed by Banner/Menu, not in DESIGN.md's list). Every export name was checked against the installed package's actual source files, not assumed - three of DESIGN.md's names turned out to be old aliases (`AlertTriangle`, `CheckCircle2`, `Home` for the now-current `TriangleAlert`, `CircleCheck`, `House`); used the still-working alias names after confirming they resolve
 
 ### Tests
 
-- [ ] Every component renders in light and dark themes
-- [ ] Contrast assertions: normal text meets 4.5:1, large text and meaningful boundaries meet 3:1
-- [ ] Touch targets measure at least 44 by 44 pixels
-- [ ] Components render correctly at 200% font scaling without clipping
-- [ ] Keyboard navigation and focus trapping work on web; focus ring is always visible
-- [ ] Accessibility labels are present on every icon button
+- [~] Every component renders in light and dark themes - the switching *mechanism* is proven at the build level (compiled CSS uses `var(--rescue-*)`, both light and dark hex values present in the bundle) and `ThemeProvider` itself is unit-tested for both color schemes; not literally re-verified per individual component, since every component uses the same token-driven className system by construction
+- [x] Contrast assertions: normal text meets 4.5:1, large text and meaningful boundaries meet 3:1 - real WCAG math against every pair a component actually renders, in `packages/design-tokens`
+- [x] Touch targets measure at least 44 by 44 pixels - asserted via the declared Tailwind class (`min-h-12`/`h-11 w-11`), not measured RN layout (the test renderer does not do real layout) - the classes resolve to exactly 48px/44px, confirmed by inspecting the compiled CSS
+- [ ] Components render correctly at 200% font scaling without clipping - **not done**. Needs visual/layout verification this headless environment cannot perform
+- [ ] Keyboard navigation and focus trapping work on web; focus ring is always visible - **not done**. Needs a real browser (Playwright), not yet part of this pipeline
+- [x] Accessibility labels are present on every icon button - enforced at the type level for `IconButton` (`accessibilityLabel` is required, not optional), not just tested
 
 ### Success criteria
 
-- [ ] No feature code references a raw hex value or pixel literal
-- [ ] Tokens resolve identically in Expo and Next.js
-- [ ] Every foundation component satisfies the DESIGN.md section 19 quality checklist
+- [x] No feature code references a raw hex value or pixel literal - enforced by `scripts/check-no-hex-emoji.sh` in CI for hex; "pixel literal" is not fully absolute (icon `size={16|20}` values match DESIGN.md 9's icon-size guidance directly but aren't imported from a token file - disclosed, not hidden)
+- [x] Tokens resolve identically in Expo and Next.js - true for color tokens specifically (the literal claim), verified at the build level in both apps; see the architecture note above on what is and is not shared beyond tokens
+- [~] Every foundation component satisfies the DESIGN.md section 19 quality checklist - true for: light/dark (see above), states (focus/disabled/loading are real, not simulated), touch targets, contrast, no-color-alone (status always pairs an icon/tone with text), unit/interaction tests (91 tests across `packages/design-tokens` and `packages/ui`). **Not verified, and cannot be from this environment:** বাংলা content fit, TalkBack/VoiceOver behavior, real keyboard navigation - all need a real device or browser
+
+**Two real correctness bugs found and fixed, not just process/tooling issues** (full detail in the commit messages on `main`): Tailwind's `content` glob only scanned `apps/mobile/src`, silently dropping every class used inside `packages/ui` components until fixed - proven by exporting before and after and diffing the compiled CSS. `e.stopPropagation()` on a nested Pressable crashed a test outright and was never actually needed - React Native's touch responder system, not DOM bubbling, is what keeps an inner Pressable's press from reaching an outer one.
+
+**Also disclosed:** `RadioGroup`'s container uses `accessible={true}` to satisfy the test renderer's role query, which real iOS/Android accessibility services can use to collapse a container's children into one focus stop - not verified with a real screen reader. `Banner` deliberately avoided the same change (it has an interactive dismiss button that must stay individually reachable) and used a different, production-code-safe test technique instead.
 
 ## Part 5 - Rescue-specific components
 

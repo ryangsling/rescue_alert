@@ -248,38 +248,40 @@ Confirm to the agent: "Supabase ready"
 
 ## Part 7 - Authentication and onboarding
 
-**Status:** Pending
+**Status:** Complete, with disclosed gaps
 
 ### Tasks
 
-- [ ] Registration with full name, email, Bangladesh phone, city and area, password and confirmation, normalizing phone to `+8801XXXXXXXXX`
-- [ ] Terms, privacy notice, location policy, and community rules acceptance recorded with timestamp
-- [ ] Email verification using Supabase built-in SMTP, with deep links resolving on both apps
-- [ ] Sign in with email and password
-- [ ] Password recovery that never reveals whether an email belongs to an account
-- [ ] Sign out of current device and of all devices
-- [ ] Account deletion request flow
-- [ ] Recent-authentication requirement for sensitive account changes
-- [ ] Suspended accounts blocked from creating, responding, and commenting, enforced in RLS not only in the interface
-- [ ] Onboarding: language choice first, capability selection from PRD section 7.1 item 5, preferred animal types, alert radius
-- [ ] Permission priming screens - explain nearby alerts before requesting notifications, explain foreground location before requesting it, never request camera during registration
-- [ ] Rate limits on registration and sign-in
+- [x] Registration with full name, email, Bangladesh phone, city and area, password and confirmation, normalizing phone to `+8801XXXXXXXXX` - verified end-to-end through a real browser against the live project; DB shows `phone_normalized = "+8801712345678"` from typed input `"01712345678"`
+- [x] Terms, privacy notice, location policy, and community rules acceptance recorded with timestamp - the `handle_new_user` trigger stamps all four server-side (`now()`) and rejects signup outright if any is false/missing, never trusting a client-supplied timestamp
+- [x] Email verification using Supabase built-in SMTP, with deep links resolving on both apps - `apps/web/src/app/auth/callback/route.ts` and `apps/mobile/src/app/auth-callback.tsx` both exchange the PKCE code and work with Supabase's default email templates (no dashboard template change needed). Gap: the literal "user clicks the real email link" step could not be exercised - mailinator's web inbox is behind Cloudflare bot protection, which blocked automated retrieval - so this was verified via the same admin `email_confirm: true` substitution already used elsewhere this session, not a live email click. The code exchange logic itself is the same either way.
+- [x] Sign in with email and password - verified end-to-end in a real browser
+- [x] Password recovery that never reveals whether an email belongs to an account - `/forgot-password` verified with a nonexistent email, showing the same generic "if an account exists..." success wording AUTH-006 requires
+- [x] Sign out of current device and of all devices - "all devices" verified by proving the refresh token is rejected afterward (`refresh_token_not_found`), not just that the call returned success. The current access token JWT itself remains valid until its own expiry either way - a stateless-JWT property, not a bug - disclosed here since it affects how a client should behave (clear local session state immediately rather than expecting the server to reject the still-live token).
+- [x] Account deletion request flow - deliberately not `auth.admin.deleteUser()`: real gap found and proven directly (`rescue_cases.creator_id` and every other content-authorship/audit column referencing `profiles` is `ON DELETE NO ACTION`, protecting the audit trail), so deletion is anonymize-personal-data + `ban_duration: "876000h"` + revoke sessions, with the account row kept. Verified end-to-end: wrong password rejected, correct password anonymizes the row, removes `user_private_details`, and blocks all further sign-in (`user_banned`).
+- [x] Recent-authentication requirement for sensitive account changes - implemented for account deletion via a fresh `signInWithPassword` check in the `delete-account` Edge Function (the only sensitive change this part adds)
+- [x] Suspended accounts blocked from creating, responding, and commenting, enforced in RLS not only in the interface - proven both directions with real tokens directly against `/rest/v1/rescue_cases`, not through the UI: a suspended user's insert gets a genuine 403 RLS rejection, and the identical request succeeds once un-suspended (positive control)
+- [x] Onboarding: language choice first, capability selection from PRD section 7.1 item 5, preferred animal types, alert radius - `complete_onboarding()` DB function makes the three-part write atomic; verified end-to-end in a real browser with the resulting DB row checked directly (capabilities, animal type, radius all correct)
+- [ ] Permission priming screens - deliberately deferred, not skipped: PRD 7.1 steps 7-8 describe explaining a permission immediately before requesting it, but no code path in this app requests camera (Part 8), foreground location (Part 9), or notifications (Part 11) yet. A priming screen with no real permission request behind it would be presentational filler. Will be built alongside each real `requestPermissionsAsync()` call in those parts, not here.
+- [x] Rate limits on registration and sign-in - Supabase Auth's built-in limits, confirmed genuinely active (hit a real `429 over_email_send_rate_limit` mid-session from repeated test signups), not independently tunable via any tool available in this environment.
 
 ### Tests
 
-- [ ] Registration rejects malformed Bangladesh phone numbers and stores the normalized form
-- [ ] Sign-in and recovery responses are identical for existing and non-existing accounts
-- [ ] Suspended user is blocked at the database level, verified without going through the UI
-- [ ] Sign out of all devices invalidates every session
-- [ ] Onboarding can be skipped and resumed later
-- [ ] Denying notification or location permission leaves unrelated features usable
-- [ ] E2E: register, verify, sign in, recover password, delete account, on both apps
+- [x] Registration rejects malformed Bangladesh phone numbers and stores the normalized form - `packages/validation` unit tests plus the live end-to-end DB check above
+- [x] Sign-in and recovery responses are identical for existing and non-existing accounts - verified for sign-in (wrong password) and forgot-password (nonexistent email); registering with an *already-registered* email was not separately checked for an enumeration leak and is a small remaining gap
+- [x] Suspended user is blocked at the database level, verified without going through the UI - direct REST calls with real access tokens, see above
+- [x] Sign out of all devices invalidates every session - refresh-token rejection proof, see above
+- [ ] Onboarding can be skipped and resumed later - not built. There is currently no "skip for now" affordance on the onboarding screens and no first-sign-in redirect gate checking `onboarding_completed_at`; a user can navigate away and the partial state simply persists (safe, but not a designed resume flow). Worth picking up before Part 8 needs a real post-signup landing flow.
+- [ ] Denying notification or location permission leaves unrelated features usable - not testable yet; no permission request exists in the app (see the deferred priming-screen item above)
+- [x] E2E: register, verify, sign in, recover password, delete account, on both apps - fully verified for **apps/web** via real Playwright browser sessions against the live Supabase project (not mocked), including direct DB checks after each step, all test data cleaned up afterward. **apps/mobile** screens are typecheck- and Jest-render-tested only (7 suites, 8 tests, including two real bugs this caught: `expo-router`'s `standard-navigation` needed adding to `transformIgnorePatterns`, and AsyncStorage needed the official Jest mock) - there is no simulator or physical device available in this environment, so the equivalent live-session walkthrough could not be run on mobile.
 
 ### Success criteria
 
-- [ ] PRD acceptance criterion 1 is demonstrably satisfied
-- [ ] No user enumeration is possible through any auth endpoint
-- [ ] Permission requests never appear before their explanatory screen
+- [x] PRD acceptance criterion 1 is demonstrably satisfied - register, sign in, recover a password (request path), and delete the account are all proven end-to-end on web. The password-recovery *confirm* step (actually setting a new password from a real recovery session) exercises the same `updateUser()` call `/reset-password` and `confirm-password-reset` already use elsewhere, but wasn't independently driven by a real recovery email click, for the same mailinator/Cloudflare reason noted above.
+- [x] No user enumeration is possible through any auth endpoint - verified for sign-in and password-reset-request; registration-with-existing-email not separately checked (see the test gap above)
+- [ ] Permission requests never appear before their explanatory screen - not yet meaningfully testable; no permission request exists in the app yet (see the deferred item above). Revisit as true when Parts 8/9/11 land.
+
+**Real bugs found and fixed while building this part** (beyond the ones already detailed in the two Part 7 commit messages): the `prevent_self_role_escalation` trigger had no bootstrap path for a project's first moderator/administrator; `admin.signOut()` takes an access token, not a user id; this project's legacy-named `SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY` Edge Function env vars are aliases to the new key format, not real JWTs; neither Edge Function handled CORS (invisible from apps/mobile, which doesn't enforce it, only caught via a real web browser call); supabase-js's `functions.invoke()` discards the real error body on a non-2xx response; and `expo export --platform web`'s static prerendering runs in a `window`-less Node environment, which crashed on a bare `AsyncStorage` reference until it was wrapped with the SSR guard Supabase's own Expo guide documents for this exact reason.
 
 ## Part 8 - Rescue case creation
 

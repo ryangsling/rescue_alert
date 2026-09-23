@@ -1512,10 +1512,76 @@ export type Database = {
         };
         Returns: undefined;
       };
+      create_case: {
+        Args: {
+          p_animal_type_id: string;
+          p_creator_on_site: boolean;
+          p_description: string;
+          p_district: string;
+          p_division: string;
+          p_idempotency_key: string;
+          p_incident_type: Database["public"]["Enums"]["incident_type"];
+          p_landmark: string;
+          p_last_seen_at?: string;
+          p_location: unknown;
+          p_upazila_or_thana: string;
+          p_urgency: Database["public"]["Enums"]["urgency_level"];
+        };
+        Returns: {
+          animal_type_id: string | null;
+          approximate_location: unknown;
+          closed_at: string | null;
+          closure_reason: string | null;
+          coordinator_id: string | null;
+          created_at: string;
+          creator_id: string;
+          creator_on_site: boolean;
+          description: string | null;
+          district: string | null;
+          division: string | null;
+          exact_location_visibility: Database["public"]["Enums"]["case_location_sensitivity"];
+          id: string;
+          idempotency_key: string | null;
+          incident_type: Database["public"]["Enums"]["incident_type"];
+          landmark: string | null;
+          last_seen_at: string | null;
+          location: unknown;
+          organization_id: string | null;
+          public_reference: string;
+          reported_at: string;
+          status: Database["public"]["Enums"]["case_status"];
+          title: string;
+          upazila_or_thana: string | null;
+          updated_at: string;
+          urgency: Database["public"]["Enums"]["urgency_level"];
+        };
+        SetofOptions: {
+          from: "*";
+          to: "rescue_cases";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       current_profile_is_suspended: { Args: never; Returns: boolean };
       current_profile_role: {
         Args: never;
         Returns: Database["public"]["Enums"]["app_role"];
+      };
+      find_nearby_duplicate_cases: {
+        Args: {
+          p_location: unknown;
+          p_radius_meters?: number;
+          p_since_minutes?: number;
+        };
+        Returns: {
+          distance_meters: number;
+          id: string;
+          public_reference: string;
+          reported_at: string;
+          status: Database["public"]["Enums"]["case_status"];
+          title: string;
+          urgency: Database["public"]["Enums"]["urgency_level"];
+        }[];
       };
       generate_public_reference: { Args: never; Returns: string };
       get_case_exact_location: {
@@ -1532,6 +1598,10 @@ export type Database = {
           landmark: string;
           location: unknown;
         }[];
+      };
+      incident_type_label_en: {
+        Args: { p_incident_type: Database["public"]["Enums"]["incident_type"] };
+        Returns: string;
       };
       is_accepted_responder: { Args: { p_case_id: string }; Returns: boolean };
       is_case_coordinator: { Args: { p_case_id: string }; Returns: boolean };

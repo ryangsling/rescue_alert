@@ -942,6 +942,7 @@ export type Database = {
           bio: string | null;
           city: string | null;
           created_at: string;
+          deleted_at: string | null;
           full_name: string;
           id: string;
           is_suspended: boolean;
@@ -956,6 +957,7 @@ export type Database = {
           bio?: string | null;
           city?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           full_name: string;
           id: string;
           is_suspended?: boolean;
@@ -970,6 +972,7 @@ export type Database = {
           bio?: string | null;
           city?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           full_name?: string;
           id?: string;
           is_suspended?: boolean;
@@ -1501,6 +1504,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      complete_onboarding: {
+        Args: {
+          p_alert_radius_km: number;
+          p_capabilities: Database["public"]["Enums"]["volunteer_capability_type"][];
+          p_preferred_animal_type_ids: string[];
+        };
+        Returns: undefined;
+      };
       current_profile_is_suspended: { Args: never; Returns: boolean };
       current_profile_role: {
         Args: never;

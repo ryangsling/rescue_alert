@@ -14,9 +14,14 @@
     "next": "16.3.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "@rescue-alert/api": "workspace:*",
     "@rescue-alert/design-tokens": "workspace:*",
     "@rescue-alert/localization": "workspace:*",
-    "@rescue-alert/ui": "workspace:*"
+    "@rescue-alert/types": "workspace:*",
+    "@rescue-alert/ui": "workspace:*",
+    "@rescue-alert/validation": "workspace:*",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.0"
   },
   "devDependencies": {
     "@rescue-alert/config": "workspace:*",

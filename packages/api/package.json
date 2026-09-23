@@ -9,10 +9,16 @@
     "build": "echo \"@rescue-alert/api: nothing to build yet\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"@rescue-alert/api: no tests yet\""
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rescue-alert/types": "workspace:*",
+    "@rescue-alert/validation": "workspace:*",
+    "@supabase/supabase-js": "^2.117.0"
   },
   "devDependencies": {
     "@rescue-alert/config": "workspace:*",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
   }
 }

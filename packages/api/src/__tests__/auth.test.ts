@@ -58,12 +58,15 @@ const registration = {
 describe("registerUser", () => {
   it("calls signUp with metadata matching what handle_new_user expects", async () => {
     const signUp = vi.fn();
-    await registerUser(stubClient({ signUp }), registration);
+    await registerUser(stubClient({ signUp }), registration, {
+      emailRedirectTo: "https://app.example/auth/callback",
+    });
 
     expect(signUp).toHaveBeenCalledWith({
       email: registration.email,
       password: registration.password,
       options: {
+        emailRedirectTo: "https://app.example/auth/callback",
         data: {
           full_name: registration.fullName,
           city: null,

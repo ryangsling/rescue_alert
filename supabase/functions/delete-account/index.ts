@@ -14,14 +14,30 @@
 // caller's own access token JWT, not their user id.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+// CORS: see sign-out-all-devices for why this is required (proven
+// directly against a real browser call, not assumed).
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 interface DeleteAccountRequest {
   currentPassword: string;
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
+    return Response.json(
+      { error: "unauthorized" },
+      { status: 401, headers: corsHeaders },
+    );
   }
   const accessToken = authHeader.slice("Bearer ".length);
 
@@ -36,7 +52,10 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } =
     await callerClient.auth.getUser();
   if (userError || !userData.user?.email) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
+    return Response.json(
+      { error: "unauthorized" },
+      { status: 401, headers: corsHeaders },
+    );
   }
   const userId = userData.user.id;
   const email = userData.user.email;
@@ -45,12 +64,15 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return Response.json({ error: "invalid_body" }, { status: 400 });
+    return Response.json(
+      { error: "invalid_body" },
+      { status: 400, headers: corsHeaders },
+    );
   }
   if (!body.currentPassword) {
     return Response.json(
       { error: "current_password_required" },
-      { status: 400 },
+      { status: 400, headers: corsHeaders },
     );
   }
 
@@ -62,7 +84,7 @@ Deno.serve(async (req) => {
   if (verifyError) {
     return Response.json(
       { error: "current_password_incorrect" },
-      { status: 401 },
+      { status: 401, headers: corsHeaders },
     );
   }
 
@@ -74,7 +96,10 @@ Deno.serve(async (req) => {
     .delete()
     .eq("user_id", userId);
   if (privateDetailsError) {
-    return Response.json({ error: "delete_failed" }, { status: 500 });
+    return Response.json(
+      { error: "delete_failed" },
+      { status: 500, headers: corsHeaders },
+    );
   }
 
   const { error: profileError } = await adminClient
@@ -89,7 +114,10 @@ Deno.serve(async (req) => {
     })
     .eq("id", userId);
   if (profileError) {
-    return Response.json({ error: "delete_failed" }, { status: 500 });
+    return Response.json(
+      { error: "delete_failed" },
+      { status: 500, headers: corsHeaders },
+    );
   }
 
   const { error: banError } = await adminClient.auth.admin.updateUserById(
@@ -99,10 +127,13 @@ Deno.serve(async (req) => {
     },
   );
   if (banError) {
-    return Response.json({ error: "delete_failed" }, { status: 500 });
+    return Response.json(
+      { error: "delete_failed" },
+      { status: 500, headers: corsHeaders },
+    );
   }
 
   await adminClient.auth.admin.signOut(accessToken, "global");
 
-  return Response.json({ success: true });
+  return Response.json({ success: true }, { headers: corsHeaders });
 });

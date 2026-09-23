@@ -8,3 +8,4 @@ export {
   requestAccountDeletion,
 } from "./auth";
 export { completeOnboarding } from "./onboarding";
+export { getEdgeFunctionErrorCode } from "./errors";

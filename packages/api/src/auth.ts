@@ -12,11 +12,16 @@ type Client = SupabaseClient<Database>;
  * call returns, so there is no authenticated session yet to write
  * with).
  */
-export async function registerUser(client: Client, input: RegistrationInput) {
+export async function registerUser(
+  client: Client,
+  input: RegistrationInput,
+  options?: { emailRedirectTo?: string },
+) {
   return client.auth.signUp({
     email: input.email,
     password: input.password,
     options: {
+      emailRedirectTo: options?.emailRedirectTo,
       data: {
         full_name: input.fullName,
         city: input.city ?? null,

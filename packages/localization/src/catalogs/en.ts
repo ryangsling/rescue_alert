@@ -45,6 +45,67 @@ export const en = {
   error_offline_message: "Changes will sync when you're back online.",
 
   form_required_field: "This field is required",
+
+  // PRD 7.1 registration and onboarding.
+  auth_full_name_label: "Full name",
+  auth_email_label: "Email",
+  auth_phone_label: "Phone number",
+  auth_city_label: "City",
+  auth_area_label: "Area",
+  auth_password_label: "Password",
+  auth_confirm_password_label: "Confirm password",
+  auth_current_password_label: "Current password",
+  auth_terms_label: "I accept the Terms of Service",
+  auth_privacy_label: "I accept the Privacy Notice",
+  auth_location_policy_label: "I accept the Location Policy",
+  auth_community_rules_label: "I accept the Community Rules",
+  auth_register_heading: "Create your account",
+  auth_register_submit: "Create account",
+  auth_register_success_heading: "Check your email",
+  auth_register_success_message:
+    "We sent a verification link to {email}. Verify your email, then sign in.",
+  auth_already_have_account: "Already have an account?",
+  auth_sign_in_link: "Sign in",
+  auth_sign_in_heading: "Sign in",
+  auth_forgot_password_link: "Forgot password?",
+  auth_no_account: "Don't have an account?",
+  auth_register_link: "Create one",
+  auth_sign_in_error: "Incorrect email or password",
+  auth_forgot_password_heading: "Reset your password",
+  auth_forgot_password_instructions:
+    "Enter your email and we'll send a link to reset your password.",
+  auth_forgot_password_submit: "Send reset link",
+  auth_forgot_password_success:
+    "If an account exists for {email}, a reset link has been sent.",
+  auth_reset_password_heading: "Choose a new password",
+  auth_reset_password_submit: "Update password",
+  auth_reset_password_success: "Your password has been updated.",
+
+  onboarding_capabilities_heading: "How would you like to help?",
+  onboarding_capabilities_instructions: "Optional. Select any that apply.",
+  onboarding_animal_types_heading: "Preferred animal types",
+  onboarding_alert_radius_heading: "Alert radius",
+  onboarding_alert_radius_unit_km: "{km} km",
+  onboarding_continue: "Continue",
+  onboarding_finish: "Finish",
+  capability_on_site_rescue: "On-site rescue",
+  capability_transport: "Transport",
+  capability_veterinary_professional: "Veterinary professional",
+  capability_veterinary_assistant: "Veterinary assistant",
+  capability_temporary_foster: "Temporary foster",
+  capability_shelter_coordination: "Shelter coordination",
+  capability_adoption_support: "Adoption support",
+  capability_case_coordination: "Case coordination",
+  capability_financial_support_interest: "Financial support",
+
+  account_settings_heading: "Account",
+  account_sign_out: "Sign out",
+  account_sign_out_all_devices: "Sign out of all devices",
+  account_delete_heading: "Delete account",
+  account_delete_warning:
+    "This cannot be undone. Enter your password to confirm.",
+  account_delete_confirm: "Delete my account",
+  account_delete_wrong_password: "That password is incorrect",
 } as const;
 
 export type TranslationKey = keyof typeof en;

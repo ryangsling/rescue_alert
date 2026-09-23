@@ -16,10 +16,29 @@
 // the same new-format key strings here, not real legacy JWTs.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+// CORS: apps/web calls this cross-origin from the browser, which
+// requires an explicit preflight response - found directly (a real
+// browser call failed with a CORS error, not a function error) rather
+// than assumed. apps/mobile isn't affected (no browser CORS
+// enforcement), but this is required for any web caller.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
+    return Response.json(
+      { error: "unauthorized" },
+      { status: 401, headers: corsHeaders },
+    );
   }
   const accessToken = authHeader.slice("Bearer ".length);
 
@@ -34,7 +53,10 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } =
     await callerClient.auth.getUser();
   if (userError || !userData.user) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
+    return Response.json(
+      { error: "unauthorized" },
+      { status: 401, headers: corsHeaders },
+    );
   }
 
   const secretKey = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")!).default;
@@ -42,8 +64,11 @@ Deno.serve(async (req) => {
 
   const { error } = await adminClient.auth.admin.signOut(accessToken, "global");
   if (error) {
-    return Response.json({ error: "sign_out_failed" }, { status: 500 });
+    return Response.json(
+      { error: "sign_out_failed" },
+      { status: 500, headers: corsHeaders },
+    );
   }
 
-  return Response.json({ success: true });
+  return Response.json({ success: true }, { headers: corsHeaders });
 });

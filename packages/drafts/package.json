@@ -1,0 +1,23 @@
+{
+  "name": "@rescue-alert/drafts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "echo \"@rescue-alert/drafts: nothing to build yet\"",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rescue-alert/validation": "workspace:*",
+    "zod": "^4.6.0"
+  },
+  "devDependencies": {
+    "@rescue-alert/config": "workspace:*",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

@@ -9,3 +9,9 @@ export {
 } from "./auth";
 export { completeOnboarding } from "./onboarding";
 export { getEdgeFunctionErrorCode } from "./errors";
+export {
+  createCase,
+  findNearbyDuplicateCases,
+  uploadCaseMedia,
+  getCaseMediaSignedUrl,
+} from "./case";

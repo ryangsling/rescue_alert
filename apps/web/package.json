@@ -15,6 +15,7 @@
     "@rescue-alert/design-tokens": "workspace:*",
     "@rescue-alert/drafts": "workspace:*",
     "@rescue-alert/localization": "workspace:*",
+    "@rescue-alert/media": "workspace:*",
     "@rescue-alert/types": "workspace:*",
     "@rescue-alert/ui": "workspace:*",
     "@rescue-alert/validation": "workspace:*",

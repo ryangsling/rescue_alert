@@ -33,7 +33,20 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Rescue Alert uses your photos to attach an image to a rescue report.",
+          "cameraPermission": "Rescue Alert uses your camera to photograph an animal for a rescue report."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Rescue Alert uses your location to record where an animal was seen."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

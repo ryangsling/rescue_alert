@@ -285,39 +285,41 @@ Confirm to the agent: "Supabase ready"
 
 ## Part 8 - Rescue case creation
 
-**Status:** Pending
+**Status:** Complete, with disclosed gaps
 
 ### Tasks
 
-- [ ] Report flow following the seven steps in DESIGN.md section 14.3, saving locally after every step
-- [ ] Local draft persistence - Expo SQLite on mobile, IndexedDB on web
-- [ ] Incident type and urgency selection from PRD section 8, with the notice that urgency is community-reported and not a veterinary assessment
-- [ ] Animal type and visible condition selection
-- [ ] Location capture by GPS, movable map pin, or manual area selection, with manual entry always available when permission is denied
-- [ ] Landmark entry accepting বাংলা and English
-- [ ] Media capture and selection with client-side compression and EXIF GPS stripping before upload
-- [ ] File type detection by content inspection, not filename extension
-- [ ] Signed upload paths tied to the authenticated user
-- [ ] Idempotency key generated per draft so retries never create duplicate cases
-- [ ] Nearby duplicate detection warning before submission
-- [ ] Preview screen showing exactly what becomes public before confirming
-- [ ] Post-submission editing of factual fields, preserving a change history
+- [x] Report flow following the seven steps in DESIGN.md section 14.3, saving locally after every step - built on both apps: `apps/web/src/app/report/report-wizard.tsx` (verified end-to-end in a real browser against the live Supabase project) and `apps/mobile/src/app/report.tsx` (typecheck/lint/Jest-verified, same disclosed no-simulator limitation as every other mobile screen this session)
+- [x] Local draft persistence - Expo SQLite (`apps/mobile/src/draft-store.ts`) and IndexedDB (`apps/web/src/lib/draft-store.ts`), both behind the shared `packages/drafts` `DraftStore` interface
+- [x] Incident type and urgency selection from PRD section 8, with the notice that urgency is community-reported and not a veterinary assessment - the disclaimer is shown at the review step (step 6), not next to the selector itself, on both apps
+- [x] Animal type and visible condition selection - "visible condition" is free text in `description` (CASE-002 is the authoritative requirement here; it names no separate structured field)
+- [x] Location capture by GPS or manual entry, with manual entry always available when permission is denied - `navigator.geolocation` on web, `expo-location` on mobile, both falling back to manual latitude/longitude fields. Movable map pin is explicitly **not** built - Part 9 owns the real interactive map on both platforms; both wizards say so in the step 4 copy rather than presenting a non-functional map control
+- [x] Landmark entry accepting বাংলা and English - a plain text field, no script restriction
+- [x] Media capture and selection with client-side compression and EXIF GPS stripping before upload - canvas resize+re-encode on web (`processImageForUpload`), `expo-image-manipulator` resize+re-encode on mobile (`apps/mobile/src/lib/processImage.ts`). Both re-encode from decoded pixels rather than editing the original file, which structurally cannot carry an EXIF segment through
+- [x] File type detection by content inspection, not filename extension - `packages/media`'s `sniffImageContentType` (real magic-byte check) gates both upload paths before any bytes reach Storage
+- [x] Signed upload paths tied to the authenticated user - `{case_id}/{media_id}.{ext}` Storage paths, RLS via `is_case_creator()`/`is_case_visible()` (Part 8 DB layer)
+- [x] Idempotency key generated per draft so retries never create duplicate cases - generated once at `createEmptyDraft()`, reused as `create_case()`'s dedup key; verified by a real duplicate-RPC-call test in the Part 8 DB layer work
+- [x] Nearby duplicate detection warning before submission - `find_nearby_duplicate_cases()` called on entering step 4, rendered as a warning banner on both apps
+- [x] Preview screen showing exactly what becomes public before confirming - step 7 on both apps
+- [ ] Post-submission editing of factual fields, preserving a change history - not built. CASE-010 is deferred; no edit UI or change-history table exists yet for a submitted case's factual fields
 
 ### Tests
 
-- [ ] EXIF GPS data is absent from every public derivative, asserted on a fixture image containing coordinates
-- [ ] Submitting the same idempotency key twice creates exactly one case
-- [ ] A report survives app termination mid-flow and resumes with all entered data
-- [ ] Upload failure preserves the draft and surfaces a recovery action
-- [ ] Duplicate warning triggers for a case seeded nearby within the time window
-- [ ] The client never claims success before server confirmation
-- [ ] E2E: create a complete case with GPS and with manual location, on both apps
+- [x] EXIF GPS data is absent from every public derivative, asserted on a fixture image containing coordinates - built a real JPEG with real GPS EXIF via Python/Pillow/piexif, ran it through the full web upload pipeline against the live project, then independently re-verified the *downloaded* Storage object with Pillow (a tool separate from the code under test): zero EXIF, correct 1600x1200 resize. Mobile's equivalent path (`hasJpegExifMarker` gate in `apps/mobile/src/lib/processImage.ts`) is typecheck/lint-verified only - never exercised against a real device photo, since no simulator is available in this environment
+- [x] Submitting the same idempotency key twice creates exactly one case - verified directly against the live `create_case()` RPC in the Part 8 DB layer work
+- [ ] A report survives app termination mid-flow and resumes with all entered data - partially proven: `MemoryDraftStore`/`IndexedDbDraftStore` unit tests prove save/list/resume at the storage-interface level, and both wizards load the most-recently-updated draft on mount. A real "kill the tab/app mid-wizard, relaunch, see the same draft" scenario was not separately driven this session on either platform. `SqliteDraftStore` (mobile) has no Jest mock for `expo-sqlite` and remains untested even at the unit level - a previously disclosed gap, unchanged
+- [ ] Upload failure preserves the draft and surfaces a recovery action - not built. `MediaPicker`'s "failed" retry state exists as a component but neither wizard wires a failure/retry path for media uploads; a failed `uploadCaseMedia` call today surfaces no recovery UI
+- [ ] Duplicate warning triggers for a case seeded nearby within the time window - `find_nearby_duplicate_cases()` and its 150m/180min defaults were established in the Part 8 DB layer work; the UI-level trigger (step 4 on both apps) was not independently re-verified this session against a real seeded nearby case
+- [x] The client never claims success before server confirmation - both wizards gate the success screen on a non-error `createCase()` response; `submitting` disables the button meanwhile
+- [x] E2E: create a complete case with GPS and with manual location, on both apps - **web**: verified end-to-end in a real Playwright browser session against the live project (manual latitude/longitude entry; Playwright's headless Chromium was not granted real GPS permission in this session, so `navigator.geolocation` itself was not separately exercised). **mobile**: not run - typecheck/lint/Jest only, no simulator or device available in this environment to exercise `expo-location`, `expo-image-picker`, or `expo-image-manipulator`
 
 ### Success criteria
 
-- [ ] PRD acceptance criteria 2 and 3 are demonstrably satisfied
-- [ ] No report is lost by network interruption in testing
-- [ ] Public media carries no location metadata
+- [ ] PRD acceptance criteria 2 and 3 are demonstrably satisfied - satisfied on web via the real end-to-end run above; not independently demonstrated on mobile for the reason stated throughout this part
+- [ ] No report is lost by network interruption in testing - not tested; there is no offline retry queue yet (Part 18's job), so this is currently unproven rather than proven-false
+- [x] Public media carries no location metadata - proven on web via the independent Pillow re-check of the actual uploaded Storage object; the same structural guarantee (re-encode from decoded pixels, verified pre-upload) applies to the mobile path but was not exercised on a real device
+
+**Real bugs found and fixed while building this part**: `create_case()`'s generated Args type marked several nullable parameters as required `string`, disproven and fixed with a corrected local type after a direct null-value RPC test; `uploadCaseMedia`/`getCaseMediaSignedUrl` hit TS2742 "cannot be named" errors from supabase-js's inferred response types, fixed with small hand-written response interfaces rather than fighting the inference; IndexedDB's cached open connection blocked `deleteDB()` forever in tests, fixed with an exported `__closeDraftDbForTests()`; `expo export --platform web` failed to bundle `apps/mobile/src/app/report.tsx` because Metro's default `assetExts` has no `wasm` entry, so it couldn't resolve `expo-sqlite`'s web worker's `wa-sqlite.wasm` import - the report screen is the first mobile screen to statically import the SQLite draft store, so nothing surfaced this until now; fixed by adding `wasm` to `metro.config.js`'s `resolver.assetExts`.
 
 ## Part 9 - Maps and location
 

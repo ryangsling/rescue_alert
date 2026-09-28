@@ -2,6 +2,15 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { LocaleProvider, type LocaleStorage } from "@rescue-alert/localization";
 import type { CaseDraft } from "@rescue-alert/drafts";
 
+// CI (36447853679) timed out the first test at Jest's default 5000ms:
+// this screen's first render is heavier than other mobile screens'
+// (a 16-option RadioGroup plus UrgencySelector and Select, each going
+// through NativeWind's className interop) and GitHub's shared runners
+// proved measurably slower than local dev for renders of this size -
+// every other mobile test file in this session renders far less on
+// its first test and stays well under 5000ms even there.
+jest.setTimeout(20000);
+
 const mockOrder = jest.fn();
 jest.mock("../../supabase-client", () => ({
   supabase: {

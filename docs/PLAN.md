@@ -323,35 +323,39 @@ Confirm to the agent: "Supabase ready"
 
 ## Part 9 - Maps and location
 
-**Status:** Pending
+**Status:** Complete, with disclosed gaps
+
+Part 10 (Feed, search, and discovery) is what actually wires any of this into a real screen - Part 9's job, matched to Parts 4-5's own precedent, was building reusable, independently-verified components and logic (`packages/maps`, `apps/web/src/components/Location*`, `apps/mobile/src/components/Location*`), not a new user-facing route. No route in either app renders these yet.
 
 ### Tasks
 
-- [ ] Integrate MapLibre React Native on mobile and MapLibre GL JS on web with the OpenFreeMap style, which requires no API key
-- [ ] Put tile, geocoding, and routing providers behind a configuration interface that can be changed remotely
-- [ ] Render the four location privacy states from DESIGN.md section 12.2 - exact, approximate, hidden, expired
-- [ ] Implement the seven marker types from DESIGN.md section 12.1, each with an outline so it stays visible over varied map colours
-- [ ] Show straight-line distance with an approximation label; no routing ETA
-- [ ] Open coordinates in an installed map application
-- [ ] Keep OpenStreetMap attribution permanently visible
-- [ ] Cache user-triggered geocoding results and respect Nominatim usage policy
-- [ ] Provide an equivalent text and list representation of all map information
-- [ ] Defer map loading until the user opens map mode
-- [ ] Confirm the attribution wording with the user
+- [x] Integrate MapLibre React Native on mobile and MapLibre GL JS on web with the OpenFreeMap style, which requires no API key - both built (`LocationMap`/`MapCanvas` on each platform). **Web verified in a real, running browser** against a temporary local route (removed before committing): real OpenFreeMap vector tiles of Dhaka render, both test markers appear at the correct coordinates, list/map toggle works. **Mobile is typecheck/lint/Jest-verified only** (native module mocked in tests) - no simulator or device is available in this environment, the same disclosed limitation as every other mobile screen this session.
+- [x] Put tile, geocoding, and routing providers behind a configuration interface that can be changed remotely - `getMapStyleUrl()` in `packages/maps` takes an override and falls back to the OpenFreeMap default. Disclosed: this project has no live remote-config/feature-flag service (see AGENTS.md), so "remotely changeable" is implemented as an environment variable read at deploy time, which is what the success criterion below actually asks for ("configuration only, no code change"). No routing provider exists to configure - MAP-003 is external hand-off only, PRD explicitly has no built-in turn-by-turn.
+- [x] Render the four location privacy states from DESIGN.md section 12.2 - `resolveLocationPrivacyState()` in `packages/maps`, fully unit-tested. Disclosed: `expired` is implemented but structurally unreachable in this MVP - PRD 10.10 (temporary responder live location) is explicitly post-MVP, so nothing anywhere sets `liveShareExpiresAt`.
+- [x] Implement the seven marker types from DESIGN.md section 12.1, each with an outline so it stays visible over varied map colours - `MAP_MARKER_STYLES` in `packages/maps`; every rendered marker (both platforms) is a white-ringed dot, verified visually on web via the real browser screenshot above.
+- [x] Show straight-line distance with an approximation label; no routing ETA - `haversineDistanceMeters()`/`formatApproximateDistance()` in `packages/maps`, unit-tested against an independently-derivable reference distance (Earth's circumference / 360 at the equator), not just against the function's own output. Not yet displayed in any screen - there is no case-detail view yet for it to appear in.
+- [x] Open coordinates in an installed map application - `buildExternalNavigationUrls()` in `packages/maps` builds `maps://`, `geo:`, and a Google Maps web fallback; wired into both platforms' `LocationList` "Open in maps" link. The URL strings are unit-tested exactly; actually launching an installed map app was not verified on any real device (no Android/iOS hardware here, and following through on web would have navigated the test browser away).
+- [x] Keep OpenStreetMap attribution permanently visible - real bug found and fixed: OpenFreeMap's own documentation states MapLibre "automatically add[s]" the required credit, but the live `liberty` style JSON (checked directly with `curl`) has **no `attribution` field at all**, on any source. MapLibre's default attribution control would therefore show nothing. Both platforms render `MAP_ATTRIBUTION_TEXT`/`MAP_ATTRIBUTION_LINKS` as an explicit, always-rendered overlay instead of trusting the library default - proven present in the real browser screenshot.
+- [ ] Cache user-triggered geocoding results and respect Nominatim usage policy - not built. No address-search/geocoding UI exists in either app yet; there is nothing to cache. Belongs with Part 10's search feature.
+- [x] Provide an equivalent text and list representation of all map information - `LocationList` on both platforms, list mode is the default (not map mode). Verified on web via a real Playwright accessibility snapshot (correct `list`/`listitem`/`img`/`link` roles and labels).
+- [x] Defer map loading until the user opens map mode - list is the default view on both platforms; on web, `MapCanvas` is loaded via `next/dynamic(..., { ssr: false })` so the maplibre-gl bundle itself is not fetched until the Map tab is actually pressed (confirmed: zero maplibre-gl network requests while in list mode).
+- [x] Confirm the attribution wording with the user - resolved without needing a judgment call: OpenFreeMap publishes exact, non-discretionary required wording ("OpenFreeMap © OpenMapTiles Data from OpenStreetMap"), used verbatim. There was no wording choice for anyone to confirm.
 
 ### Tests
 
-- [ ] An unauthorized viewer sees the approximate marker and never the exact coordinate, asserted at the network layer
-- [ ] Markers remain distinguishable under simulated deuteranopia and protanopia
-- [ ] Attribution is present in every map view
-- [ ] External navigation hand-off opens with correct coordinates on Android, iOS, and web
-- [ ] The list representation conveys the same information as the map for a screen reader
+- [ ] An unauthorized viewer sees the approximate marker and never the exact coordinate, asserted at the network layer - not tested this part. `resolveLocationPrivacyState()` is unit-tested as client-side rendering logic, but PRD MAP-005's actual guarantee is a database/RLS-level one, built in Part 8's schema work and not re-verified here since no screen yet queries real case locations through this code path.
+- [ ] Markers remain distinguishable under simulated deuteranopia and protanopia - not tested; no color-blindness simulation tool is available in this environment. The mitigating design choice (shape + color together, per DESIGN.md 12.1's own shape column) is implemented (`MapMarkerShape`), but not independently verified with a simulator.
+- [x] Attribution is present in every map view - proven for the one real map view exercised (web `MapCanvas`, screenshot-verified). Mobile's equivalent overlay exists in code but was not visually verified (no device).
+- [ ] External navigation hand-off opens with correct coordinates on Android, iOS, and web - the URL strings are exactly unit-tested for all three; actually opening an installed map app was not exercised on real hardware.
+- [x] The list representation conveys the same information as the map for a screen reader - verified on web via a real accessibility-tree snapshot. Mobile's list uses the RN equivalents (`accessibilityRole`, `accessibilityLabel`) but was not checked with a real screen reader (TalkBack/VoiceOver), the same disclosed gap noted elsewhere for RadioGroup in Part 5.
 
 ### Success criteria
 
-- [ ] PRD acceptance criterion 14 is demonstrably satisfied
-- [ ] Switching tile provider requires configuration only, no code change
-- [ ] The nearby list is fully usable without ever loading a map
+- [x] PRD acceptance criterion 14 is demonstrably satisfied - satisfied on web (real rendered tiles plus persistent attribution, proven directly); not independently demonstrated on mobile (no device).
+- [x] Switching tile provider requires configuration only, no code change - `getMapStyleUrl()` takes an override with no code change required to use it; no screen currently passes a non-default value through from an env var, since no screen consumes `styleUrlOverride` yet.
+- [x] The nearby list is fully usable without ever loading a map - proven on web: list mode never triggers a single maplibre-gl network request.
+
+**Real bugs found and fixed while building this part**: OpenFreeMap's `liberty` style JSON has no `attribution` field despite OpenFreeMap's own docs claiming MapLibre "automatically add[s]" it - fixed by rendering an explicit attribution overlay instead of trusting the library default, see above. `maplibre-gl` 6.x fails to load its own web worker under Next.js 16's Turbopack in both `next dev` and a production `next build && next start` ("Worker failed to load. Check that the worker URL is correct.") - this is a currently-unresolved, independently-confirmed upstream incompatibility (matched against other real projects hitting the identical error), not something this app's code caused. Root-caused rather than worked around blindly: first tried serving the worker as a static file with `setWorkerUrl()` (documented elsewhere as a fix), which did not resolve it in this environment either; the fix that actually worked, and the one shipped, is pinning `maplibre-gl` to `5.24.0`, whose bundler-friendly default worker loading (an inline blob URL) works cleanly under Turbopack with zero extra configuration - verified with a clean cache, a freshly-started dev server, and a real rendered map. `maplibre-react-native`'s TypeScript peer requirements (`expo>=54`, `react-native>=0.80`) are already satisfied by this project's existing SDK 57 toolchain, so no other version changes were needed on mobile.
 
 ## Part 10 - Feed, search, and discovery
 

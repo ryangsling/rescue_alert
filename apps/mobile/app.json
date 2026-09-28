@@ -46,7 +46,8 @@
         {
           "locationWhenInUsePermission": "Rescue Alert uses your location to record where an animal was seen."
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "experiments": {
       "typedRoutes": true,

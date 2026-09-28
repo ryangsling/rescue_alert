@@ -15,6 +15,7 @@
     "@rescue-alert/design-tokens": "workspace:*",
     "@rescue-alert/drafts": "workspace:*",
     "@rescue-alert/localization": "workspace:*",
+    "@rescue-alert/maps": "workspace:*",
     "@rescue-alert/media": "workspace:*",
     "@rescue-alert/types": "workspace:*",
     "@rescue-alert/ui": "workspace:*",
@@ -22,6 +23,7 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.0",
     "idb": "^8.0.3",
+    "maplibre-gl": "^5.24.0",
     "next": "16.3.5",
     "react": "19.2.3",
     "react-dom": "19.2.3"

@@ -11,6 +11,8 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.incodet.rescuealert",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -38,7 +40,8 @@
         "expo-image-picker",
         {
           "photosPermission": "Rescue Alert uses your photos to attach an image to a rescue report.",
-          "cameraPermission": "Rescue Alert uses your camera to photograph an animal for a rescue report."
+          "cameraPermission": "Rescue Alert uses your camera to photograph an animal for a rescue report.",
+          "microphonePermission": false
         }
       ],
       [
@@ -52,6 +55,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b83602d7-b266-4d96-b86f-06cfd3368435"
+      }
+    },
+    "owner": "crazydiamond99s-team"
   }
 }

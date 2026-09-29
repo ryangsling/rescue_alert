@@ -398,6 +398,17 @@ The developer must:
 3. Create an Expo account and run `eas login`, then `eas init` inside apps/mobile to generate the EAS project ID
 4. Upload both credentials with `eas credentials`, selecting Android FCM V1 and iOS APNs key
 5. Record the EAS project ID in apps/mobile/app.config.ts
+```
+
+**Resolution: Android done, iOS deliberately deferred by the developer's own instruction ("Android only for now").**
+
+1. Firebase - the developer's Google account (`ahmedalif1371@gmail.com`) had a Google Cloud project-creation quota already exhausted; creating a brand-new Firebase project failed with a real `QuotaFailure` error, confirmed by inspecting `firebase-debug.log` rather than guessed. Deleting an unused existing project to free quota turned out to need owner-level delete access the developer didn't have. Resolved by reusing an existing, already Firebase-enabled, unused project (`oceanic-grin-477713-b2`, display name "My First Project") instead of creating a new one - the developer confirmed this was fine. Android app registered with production package name `com.incodet.rescuealert`; `google-services.json` downloaded into `apps/mobile/` (gitignored, matching this repo's existing convention, not committed).
+2. Apple Developer Program / APNs - explicitly not started. The developer said Android-only for now; this remains a real future PAUSE step (payment, legal agreement, and identity verification only the account owner can complete - no tool changes that).
+3. Expo/EAS - already authenticated in this environment as `crazydiamond99` before this step began (no fresh account needed). `eas init` run inside `apps/mobile` with `--account crazydiamond99s-team` (the developer's explicit choice over the personal account), generating EAS project ID `b83602d7-b266-4d96-b86f-06cfd3368435`.
+4. `eas credentials` is a genuinely interactive terminal menu with no non-interactive/scriptable flag for this operation - driven here with a real pseudo-terminal (Python's `pexpect`), navigating live off the actual rendered menu text at each step rather than a blind scripted keystroke sequence, given this manages real account credentials. Android FCM V1 Google Service Account key uploaded and independently re-verified with a fresh `eas credentials` read afterward (`Updated: 1 minute ago`, correct client email/project ID shown). iOS/APNs step skipped per the developer's instruction.
+5. The EAS project ID was recorded by `eas init` itself, automatically, in `apps/mobile/app.json` (`extra.eas.projectId`) - this project has used `app.json`, not `app.config.ts`, since Part 2, and `eas init` writes to whichever config file already exists.
+
+**Real bug found and fixed along the way**: `eas init`'s automatic Android permission sync added `android.permission.RECORD_AUDIO` to `app.json`, inherited from `expo-image-picker`'s default video-capture support - this app never captures or plays audio. Fixed by setting `microphonePermission: false` in the `expo-image-picker` plugin config; verified via `expo config --json` that the resolved permission list no longer includes it, while `ACCESS_COARSE_LOCATION`/`ACCESS_FINE_LOCATION` (genuinely needed for GPS) remain, contributed independently by `expo-location`'s own plugin.
 
 Confirm to the agent: "Push credentials ready"
 ```

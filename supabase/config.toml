@@ -5,3 +5,7 @@ major_version = 17
 
 [db.extensions]
 postgis = true
+
+# Called by pg_cron with a shared secret header, not a user JWT.
+[functions.dispatch-alerts]
+verify_jwt = false

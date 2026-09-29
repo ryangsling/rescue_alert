@@ -415,40 +415,52 @@ Confirm to the agent: "Push credentials ready"
 
 ## Part 11 - Geospatial matching and push notifications
 
-**Status:** Pending
+**Status:** Server side complete and verified locally; mobile client, deep links, and live deployment still open (see "Not done" below)
+
+Verified on plain Postgres 16 + PostGIS with the repo's migrations applied and `supabase/tests/run.sh` (also a new `sql` job in CI). Nothing in this part has run against the live Supabase project or the real Expo push service: the Supabase MCP was not available in the session that built it.
 
 ### Tasks
 
-- [ ] PostGIS candidate query selecting volunteers by alert radius, availability, capability, preferred animal types, quiet hours, account trust status, and existing commitments - never scanning all users
-- [ ] Edge Function dispatching notifications through Expo Notifications, running as a background task
-- [ ] Device token registration, refresh, and removal of invalid or expired tokens
-- [ ] Radius expansion for critical cases from a small initial radius to larger configured radii when no response arrives within the configured interval
-- [ ] Stop conditions - expansion halts when adequate assistance is committed or the case closes
-- [ ] Deduplication ensuring a volunteer never receives a repeated initial alert for the same case
-- [ ] Quiet hours honoured, overridden only for users who explicitly enabled critical-alert override
-- [ ] Notification payloads carrying case type, approximate area, and distance, never exact coordinates or private contact details
-- [ ] Deep links resolving to the correct case from a cold application start
-- [ ] Notification grouping for repeated updates on one case
-- [ ] Delivery attempts recorded without treating delivery as proof of being seen
-- [ ] Notification failure isolated so it never rolls back a successfully created case
-- [ ] Remaining nine notification categories from PRD section 11.1
+- [x] PostGIS candidate query - `find_alert_candidates()`: radius test through the GiST index on `notification_preferences.base_location` (new column: a static, user-chosen point, never tracked). Filters: the volunteer's own alert radius, availability, `min_urgency`, a capability matching the incident type (reusing Part 10's `incident_type_matches_capability`; a volunteer with no capabilities gets no push), preferred animal types (none set = all), not suspended, no active restriction/suspension/ban, not already committed to the case, not already alerted. Disclosed interpretations: "account trust status" = not suspended or restricted (no email-verified or reputation gate), and "existing commitments" = already committed to this case (there is no cap on concurrent commitments). Matching and the distance shown both use the server-derived approximate point, never the exact one.
+- [x] Edge Function `dispatch-alerts` - `supabase/functions/dispatch-alerts`, answers 202 and runs `runDispatch` (from `packages/notifications`) through `EdgeRuntime.waitUntil`. Unit-tested with a fake RPC and fake fetch; **not deployed and never called against real Expo**.
+- [x] Device tokens (database side) - `register_device()` (moves a token between accounts safely, validates format), `unregister_device()`, and invalid-token removal: a `DeviceNotRegistered` ticket or receipt marks the device inactive (kept, not deleted, per the table comment). **The mobile app does not yet request permission or register a token.**
+- [x] Radius expansion - `alert_escalation_steps` table (critical: 2 km at 0 min, 5 km at 10, 10 km at 20, 20 km at 40; urgent: 5 km once). Editing rows changes behaviour with no code change. Steps are measured from when the case became open.
+- [x] Stop conditions - `case_needs_alerts()`: only `open` or `response_committed` critical/urgent cases alert; alerts stop once a responder is committed and no need on the board is unfulfilled (an empty board counts as met), and when the case closes. Also re-checked at push time, so a queued nearby alert is dropped if the case was filled in the meantime.
+- [x] Deduplication - a partial unique index on `(recipient, case)` across the three nearby-alert categories; concurrent dispatcher runs cannot double-insert.
+- [x] Quiet hours (Asia/Dhaka wall clock, wraps midnight) - deferred, not dropped: the inbox row exists, the push is queued when quiet hours end. Only a user with `critical_override` receives a critical nearby alert during quiet hours. Nothing older than 24 hours is pushed.
+- [x] Payloads - template inputs only (incident type, urgency, area, distance rounded to 0.1 km); no coordinates, no landmark, no phone. The rendered text is in the recipient's language (bn or en) and the urgency is spelled out in the title, matching the urgency chip rule.
+- [ ] Deep links - each push carries `rescuealert://case/<id>` in its data, but neither app has a case-detail route yet (Part 12), so nothing resolves it. Not built or tested.
+- [x] Grouping (server side) - repeated update-style notifications for one recipient and case within 30 minutes fold into one unread row with a running count, so they do not create a new row or push. Not done: OS-level notification stacking on the device.
+- [x] Delivery attempts - `notification_deliveries` records each attempt, ticket id, error, and receipt check. The status `accepted` means only that Expo took it; nothing marks a notification as seen except the recipient setting `read_at`.
+- [x] Failure isolation - dispatch is pulled by a scheduled function and is never called from `create_case`; the event triggers wrap their bodies so an error becomes a warning. Both proven by forcing the notifications table to reject every insert.
+- [x] Remaining nine categories - radius-expanded (dispatcher), and trigger-driven: response accepted or changed, official update, reply or mention, status changed, closed, follow-up requested, moderation or account. Disclosed gaps: there is no mention syntax, so "mention" is not implemented (comments and replies are); moderator actions notify a case creator only when `target_type = 'case'`.
 
 ### Tests
 
-- [ ] Matching returns exactly the expected volunteers for seeded cases at known distances and preference combinations
-- [ ] Running the dispatcher twice for one case sends no duplicate initial alerts
-- [ ] Radius expansion stops on commitment and on closure, asserted separately
-- [ ] Quiet hours suppress non-override notifications and permit override ones
-- [ ] Invalid tokens are removed after a rejected send
-- [ ] Notification payload contains no exact coordinate and no phone number
-- [ ] Deep link opens the correct case from a cold start on both platforms
-- [ ] A forced notification failure leaves the created case intact
+- [x] Matching returns exactly the expected volunteers - 13 seeded volunteers at known distances (1, 3, 7, 15, 30 km) and preference combinations, asserted as exact sets at radii 2, 5, 10, 20, plus an urgent-case variant.
+- [x] Dispatcher twice sends no duplicate initial alerts - asserted, plus "no volunteer holds two nearby alerts for one case" across the whole expansion.
+- [x] Expansion stops on commitment and on closure, asserted separately (and a third case shows it continues while a need is unfulfilled).
+- [x] Quiet hours suppress non-override notifications and permit override ones - including that the override applies to critical cases only and that the deferred push queues when quiet hours end.
+- [x] Invalid tokens are removed after a rejected send - from both a rejected ticket and a bad receipt; transient errors retry up to three attempts.
+- [x] Payload contains no exact coordinate and no phone number - checked on stored payloads (SQL) and on the built push message (unit test).
+- [ ] Deep link opens the correct case from a cold start on both platforms - not built (see above).
+- [x] A forced notification failure leaves the created case intact - for dispatch and for the event triggers.
+- Also covered: RLS and grants (a user sees only their own notifications and cannot insert; deliveries and escalation config are not readable by clients; privileged functions are not executable by anon or authenticated), token registration moving between accounts, and that matching uses the approximate point rather than the exact one.
+- Verification method: each SQL test was checked by mutation - removing the dedup index, the stop condition, the quiet-hours check, the payload restriction, the failure isolation, the grouping window, the actor exclusion, and switching matching to the exact point each made a specific test fail.
 
 ### Success criteria
 
-- [ ] PRD acceptance criteria 4 and 16 are demonstrably satisfied
-- [ ] Matching is executed in PostGIS, verified by query plan inspection
-- [ ] No duplicate alert is observed across the full test suite
+- [ ] PRD acceptance criterion 4 (a nearby eligible volunteer can receive and open a push notification) - not demonstrated: no real push has been sent and there is no mobile registration or deep-link handling yet. Criterion 16 (deduplication and radius-stop verified) is satisfied by the SQL tests above.
+- [x] Matching is executed in PostGIS, verified by query plan inspection - 20,000 seeded volunteers, default planner settings, the plan for the same `st_dwithin` predicate uses `notification_preferences_base_location_idx` with no sequential scan. Caveat: this inspects the statement with the same predicate, not the plan inside `find_alert_candidates()` itself, which Postgres does not expose through `EXPLAIN`.
+- [x] No duplicate alert is observed across the full SQL suite.
+
+### Not done, and needed before this part is fully closed
+
+1. Apply the three `20260929150xxx` migrations to the live project, then regenerate `packages/types/src/database.ts` (needs the Supabase MCP; nothing in TypeScript reads the new tables directly yet).
+2. Deploy `dispatch-alerts` with `verify_jwt = false` (already in `supabase/config.toml`). It imports `packages/notifications` by relative path, which the deploy tooling must be able to bundle - unverified. Set the `DISPATCH_SECRET` secret (and optionally `EXPO_ACCESS_TOKEN`).
+3. Enable `pg_cron` and `pg_net`, store the secret in Vault, and schedule the function every minute: `select cron.schedule('dispatch-alerts', '* * * * *', $$ select net.http_post(url := 'https://<project-ref>.supabase.co/functions/v1/dispatch-alerts', headers := jsonb_build_object('x-dispatch-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'dispatch_secret'))) $$);`
+4. Mobile: request notification permission, call `register_device` with the Expo push token on launch and `unregister_device` on sign-out, add a screen where a volunteer sets a base point and alert radius, and handle the tap deep link. Android delivery also needs `google-services.json` available to EAS cloud builds (it is gitignored).
+5. Send one real push end to end on an Android development build.
 
 ## Part 12 - Response, assignment, and coordination
 

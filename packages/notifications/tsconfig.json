@@ -1,0 +1,11 @@
+{
+  "extends": "@rescue-alert/config/tsconfig/base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "declaration": false,
+    "declarationMap": false,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src"]
+}

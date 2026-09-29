@@ -156,4 +156,22 @@ export const bn: Record<keyof typeof en, string> = {
   report_duplicate_warning_message:
     "এই প্রাণীর জন্য ইতিমধ্যে একটি রিপোর্ট থাকতে পারে। নতুন রিপোর্ট জমা দেওয়ার আগে পর্যালোচনা করুন।",
   report_back: "পেছনে",
+
+  feed_heading: "কাছাকাছি কেসসমূহ",
+  feed_search_placeholder: "কিওয়ার্ড দিয়ে খুঁজুন",
+  feed_filter_animal_type: "প্রাণীর ধরন",
+  feed_filter_all_animals: "সব প্রাণী",
+  feed_filter_incident_type: "ঘটনার ধরন",
+  feed_filter_all_incident_types: "সব ধরনের ঘটনা",
+  feed_filter_radius_km: "{km} কিমি এর মধ্যে",
+  feed_filter_any_distance: "যেকোনো দূরত্ব",
+  feed_show_active: "সক্রিয় কেস",
+  feed_show_closed: "বন্ধ কেস",
+  feed_use_my_location: "আমার অবস্থান ব্যবহার করুন",
+  feed_load_more: "আরও দেখুন",
+  feed_no_results: "আপনার ফিল্টারের সাথে মিলে এমন কোনো কেস নেই।",
+  feed_view_list: "তালিকা",
+  feed_view_map: "মানচিত্র",
+  status_open: "খোলা",
+  status_response_committed: "স্বেচ্ছাসেবক প্রতিশ্রুতিবদ্ধ",
 };

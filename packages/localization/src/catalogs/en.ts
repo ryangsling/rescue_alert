@@ -157,6 +157,25 @@ export const en = {
   report_duplicate_warning_message:
     "There may already be a report for this animal. Review before submitting a new one.",
   report_back: "Back",
+
+  // PRD 10.5, DESIGN.md 14.2 nearby feed.
+  feed_heading: "Nearby cases",
+  feed_search_placeholder: "Search by keyword",
+  feed_filter_animal_type: "Animal type",
+  feed_filter_all_animals: "All animals",
+  feed_filter_incident_type: "Incident type",
+  feed_filter_all_incident_types: "All incident types",
+  feed_filter_radius_km: "Within {km} km",
+  feed_filter_any_distance: "Any distance",
+  feed_show_active: "Active cases",
+  feed_show_closed: "Closed cases",
+  feed_use_my_location: "Use my location",
+  feed_load_more: "Load more",
+  feed_no_results: "No cases match your filters yet.",
+  feed_view_list: "List",
+  feed_view_map: "Map",
+  status_open: "Open",
+  status_response_committed: "Responder committed",
 } as const;
 
 export type TranslationKey = keyof typeof en;

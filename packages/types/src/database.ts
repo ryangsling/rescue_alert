@@ -1603,6 +1603,13 @@ export type Database = {
         Args: { p_incident_type: Database["public"]["Enums"]["incident_type"] };
         Returns: string;
       };
+      incident_type_matches_capability: {
+        Args: {
+          p_capability: Database["public"]["Enums"]["volunteer_capability_type"];
+          p_incident_type: Database["public"]["Enums"]["incident_type"];
+        };
+        Returns: boolean;
+      };
       is_accepted_responder: { Args: { p_case_id: string }; Returns: boolean };
       is_case_coordinator: { Args: { p_case_id: string }; Returns: boolean };
       is_case_creator: { Args: { p_case_id: string }; Returns: boolean };
@@ -1611,6 +1618,41 @@ export type Database = {
       is_moderator_or_admin: { Args: never; Returns: boolean };
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean };
       is_org_member: { Args: { p_org_id: string }; Returns: boolean };
+      list_feed_cases: {
+        Args: {
+          p_animal_type_ids?: string[];
+          p_incident_types?: Database["public"]["Enums"]["incident_type"][];
+          p_include_closed?: boolean;
+          p_limit?: number;
+          p_offset?: number;
+          p_radius_meters?: number;
+          p_search_text?: string;
+          p_since?: string;
+          p_viewer_lat?: number;
+          p_viewer_lng?: number;
+        };
+        Returns: {
+          animal_type_slug: string;
+          approximate_latitude: number;
+          approximate_longitude: number;
+          distance_meters: number;
+          district: string;
+          division: string;
+          id: string;
+          incident_type: Database["public"]["Enums"]["incident_type"];
+          priority_tier: number;
+          public_reference: string;
+          reported_at: string;
+          status: Database["public"]["Enums"]["case_status"];
+          thumbnail_is_graphic: boolean;
+          thumbnail_storage_path: string;
+          title: string;
+          total_count: number;
+          upazila_or_thana: string;
+          updated_at: string;
+          urgency: Database["public"]["Enums"]["urgency_level"];
+        }[];
+      };
       rescue_cases_public: {
         Args: never;
         Returns: {

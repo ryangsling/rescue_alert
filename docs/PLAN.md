@@ -359,33 +359,35 @@ Part 10 (Feed, search, and discovery) is what actually wires any of this into a 
 
 ## Part 10 - Feed, search, and discovery
 
-**Status:** Pending
+**Status:** Complete, with disclosed gaps
 
 ### Tasks
 
-- [ ] List view as the default discovery surface, map view secondary
-- [ ] Ranking by urgency, suitability to the viewer's capabilities, distance, and freshness - never by popularity
-- [ ] Apply the five-tier priority order from DESIGN.md section 14.2
-- [ ] Filters for animal, status, incident type, distance, date, and required help
-- [ ] Closed cases discoverable separately from active cases
-- [ ] Text search supporting বাংলা and English
-- [ ] Pagination on every feed
-- [ ] Thumbnails in lists, never full images
-- [ ] Bounded realtime subscriptions that unsubscribe on unmount
+- [x] List view as the default discovery surface, map view secondary - both apps default to list mode; map mode reuses Part 9's `LocationMap`/`MapCanvas`, verified rendering real tiles when actually wired into a live screen (not just the Part 9 standalone demo)
+- [x] Ranking by urgency, suitability to the viewer's capabilities, distance, and freshness - never by popularity - `list_feed_cases()` (Part 10 DB layer); no like/follower/report count appears anywhere in `CaseCard`/`RescueCaseCard`, by construction
+- [x] Apply the five-tier priority order from DESIGN.md section 14.2 - implemented and verified against real seeded cases covering all five tiers at once (see the DB layer's own migration comments for the literal-text interpretation decisions: a non-capability-matching critical case falls to tier 4 rather than tier 1, and tier 3 - "committed cases requiring additional support" - is computed from real `case_responses`/`case_needs` rows rather than assumed from status alone)
+- [x] Filters for animal, status, incident type, distance, date, and required help - **animal type**, **incident type**, **active/closed status**, and **distance radius** (via "use my location" + a km-radius select) are all built and wired into the UI on both platforms, verified against real seeded data (incident-type filtering confirmed in a real browser; radius filtering confirmed at the RPC layer via direct calls - granting real GPS permission to a headless Playwright browser was not attempted, the same limitation noted for the report wizard's GPS step in Part 8). **Not built**: a date-range filter (the RPC/validation layer already accepts `since`, but no UI control exists on either platform) and a "required help" filter (deferred on purpose - it would filter against `case_needs`, which nothing populates yet since Part 12's needs-board UI doesn't exist; a filter control over permanently-empty data would be worse than no control)
+- [x] Closed cases discoverable separately from active cases - verified twice in a real browser: toggling to closed shows only the closed case, toggling back shows only active ones, never mixed
+- [x] Text search supporting বাংলা and English - both verified in a real browser against live seeded data (English: title substring match; বাংলা: a real Bengali description, `ধানমন্ডি লেকের গেটের কাছে একটি আহত কুকুর দেখা গেছে`, searched with `ধানমন্ডি লেকের` and matched correctly)
+- [x] Pagination on every feed - `limit`/`offset` capped server-side at 50/page; verified two consecutive pages return disjoint results with a consistent `total_count`
+- [x] Thumbnails in lists, never full images - `thumbnail_storage_path`/`thumbnail_is_graphic` returned by the RPC, rendered as small (64-80px) signed-URL images via `getCaseMediaSignedUrl`, graphic media skipped rather than shown. Not exercised against a real uploaded photo in this part's own testing - relies on Part 8's already-proven upload/signed-URL mechanism
+- [x] Bounded realtime subscriptions that unsubscribe on unmount - one `postgres_changes` channel per screen instance on both platforms, torn down in the effect's cleanup, debounced to one refetch per burst of changes, deliberately scoped to refreshing only page 1 (an already-scrolled "load more" list is never silently reshuffled). **Real bug found and fixed**: `rescue_cases` was not in the `supabase_realtime` publication at all (`select * from pg_publication_tables where pubname = 'supabase_realtime'` returned zero rows for every table in the project) - the subscription code was structurally correct but would have silently never fired in production. Fixed with a migration and verified end-to-end in a real browser: inserting and deleting a live case while the feed was open updated the UI with no manual reload
 
 ### Tests
 
-- [ ] Ranking places a matching critical case above a nearer non-matching support case
-- [ ] Filters compose correctly and produce the expected result sets against seed data
-- [ ] Bengali and English search both return the seeded case
-- [ ] Feeds paginate and do not load unbounded result sets
-- [ ] No realtime subscription leaks across navigation, asserted by connection count
+- [x] Ranking places a matching critical case above a nearer non-matching support case - the five-tier assignment and `order by priority_tier asc, distance_meters asc` are verified correct by construction (tier always dominates distance in the sort), and all five tiers were verified against real seeded data in one call; the specific literal scenario (a non-matching support case geographically nearer than a matching critical case) was not separately isolated in a single test - the closest seeded case to this shape still had tier as the deciding factor, not distance, consistent with the guarantee, but not a clean one-variable isolation
+- [x] Filters compose correctly and produce the expected result sets against seed data - verified via direct RPC calls (animal type, incident type, radius, search, closed/active, pagination, all independently) and via real browser clicks for the UI-exposed filters
+- [x] Bengali and English search both return the seeded case - both verified in a real browser, see above
+- [x] Feeds paginate and do not load unbounded result sets - verified (two pages, consistent total, server-side 50-item cap)
+- [ ] No realtime subscription leaks across navigation, asserted by connection count - the subscribe-in-effect/unsubscribe-in-cleanup code is correct by inspection and the subscription was proven to receive real events end-to-end, but "asserted by connection count" specifically (e.g. inspecting the browser's active WebSocket count across a mount/unmount/navigate cycle) was not done - a genuine gap in this test's literal rigor, not just a disclosed simplification
 
 ### Success criteria
 
-- [ ] The nearby list becomes usable quickly on a throttled connection
-- [ ] No popularity signal appears anywhere in the feed
-- [ ] Closed and active cases never intermix
+- [ ] The nearby list becomes usable quickly on a throttled connection - not tested; no network throttling was applied in any of this part's browser verification. Unproven, not disproven
+- [x] No popularity signal appears anywhere in the feed - true by construction, verified by inspection of both `CaseCard` and the `RescueCaseCard` usage
+- [x] Closed and active cases never intermix - verified twice in a real browser (see above)
+
+**Real bugs found and fixed while building this part**: `rescue_cases` was missing from the `supabase_realtime` publication entirely, which would have made every realtime subscription in the app silently inert - found by directly querying `pg_publication_tables` rather than assuming realtime "just works" once a `.channel()` call is added, fixed with a migration, and re-verified with a real live insert/delete test. A brief "no cases match your filters yet" flash appeared on first paint before the initial fetch had even started (found in real browser testing, not by inspection) - fixed by defaulting the loading state to `true` instead of `false`. `list_feed_cases()`'s tier 3 ("committed cases requiring additional support") was initially built as a simplification (every `response_committed`-status case counts), then upgraded to use the real `case_responses`/`case_needs` tables once their existence was discovered mid-part (they were already created in Part 3's upfront schema migration, unused until now) - accurate automatically once Part 12 ships a needs board, with no future migration required.
 
 ### PAUSE 2 - Before Part 11 (Push notification credentials)
 ```

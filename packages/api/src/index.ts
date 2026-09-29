@@ -15,3 +15,4 @@ export {
   uploadCaseMedia,
   getCaseMediaSignedUrl,
 } from "./case";
+export { listFeedCases, type FeedCase } from "./feed";

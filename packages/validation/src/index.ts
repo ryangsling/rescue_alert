@@ -25,3 +25,4 @@ export {
   createCaseSchema,
   type CreateCaseInput,
 } from "./case";
+export { feedFiltersSchema, type FeedFiltersInput } from "./feed";

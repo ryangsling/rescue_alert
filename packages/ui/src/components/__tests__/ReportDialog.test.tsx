@@ -6,6 +6,14 @@ const reasonOptions = [
   { value: "spam" as const, label: "Spam" },
 ];
 
+const labels = {
+  title: "Report",
+  reasonGroupLabel: "Why are you reporting this?",
+  detailsLabel: "Anything else moderators should know? (optional)",
+  cancelLabel: "Cancel",
+  confirmLabel: "Submit report",
+};
+
 describe("ReportDialog", () => {
   it("disables submit until a reason is chosen, then submits reason and details", () => {
     const onConfirm = jest.fn();
@@ -15,6 +23,7 @@ describe("ReportDialog", () => {
         onRequestClose={jest.fn()}
         reasonOptions={reasonOptions}
         onConfirm={onConfirm}
+        {...labels}
       />,
     );
 

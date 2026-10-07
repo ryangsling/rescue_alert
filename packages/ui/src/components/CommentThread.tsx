@@ -13,6 +13,8 @@ export interface CommentThreadProps {
   items: readonly CommentThreadItem[];
   /** Omitted entirely when replying is not available (e.g. the case is closed). */
   onReplyPress?: (commentId: string) => void;
+  /** Translated by the caller; required together with onReplyPress. */
+  replyLabel?: string;
   /** The composer the caller renders inline under the comment being replied to - CommentThread only places it. */
   replyComposer?: { commentId: string; node: ReactNode } | null;
   className?: string;
@@ -22,6 +24,7 @@ export interface CommentThreadProps {
 export function CommentThread({
   items,
   onReplyPress,
+  replyLabel = "Reply",
   replyComposer,
   className,
 }: CommentThreadProps) {
@@ -33,7 +36,7 @@ export function CommentThread({
           {onReplyPress ? (
             <View className="ml-3">
               <Button variant="text" onPress={() => onReplyPress(item.id)}>
-                Reply
+                {replyLabel}
               </Button>
             </View>
           ) : null}

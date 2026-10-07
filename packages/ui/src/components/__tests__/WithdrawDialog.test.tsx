@@ -1,6 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { WithdrawDialog } from "../WithdrawDialog";
 
+const labels = {
+  title: "Withdraw your commitment",
+  reasonLabel: "Why are you withdrawing?",
+  cancelLabel: "Cancel",
+  confirmLabel: "Withdraw",
+};
+
 describe("WithdrawDialog", () => {
   it("disables confirm until a reason is entered, then confirms with the trimmed reason", () => {
     const onConfirm = jest.fn();
@@ -9,6 +16,7 @@ describe("WithdrawDialog", () => {
         visible
         onRequestClose={jest.fn()}
         onConfirm={onConfirm}
+        {...labels}
       />,
     );
 
@@ -31,6 +39,7 @@ describe("WithdrawDialog", () => {
         visible
         onRequestClose={onRequestClose}
         onConfirm={jest.fn()}
+        {...labels}
       />,
     );
     fireEvent.press(screen.getByText("Cancel"));

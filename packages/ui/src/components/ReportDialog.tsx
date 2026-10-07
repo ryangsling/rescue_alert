@@ -11,6 +11,12 @@ export interface ReportDialogProps<TReason extends string> {
   reasonOptions: readonly RadioOption<TReason>[];
   onConfirm: (reason: TReason, details: string) => void;
   submitting?: boolean;
+  /** Every visible string below is translated by the caller - this component holds no English text of its own. */
+  title: string;
+  reasonGroupLabel: string;
+  detailsLabel: string;
+  cancelLabel: string;
+  confirmLabel: string;
 }
 
 /** MOD-001: reporting a comment, reply, or piece of media. */
@@ -20,34 +26,34 @@ export function ReportDialog<TReason extends string>({
   reasonOptions,
   onConfirm,
   submitting = false,
+  title,
+  reasonGroupLabel,
+  detailsLabel,
+  cancelLabel,
+  confirmLabel,
 }: ReportDialogProps<TReason>) {
   const [reason, setReason] = useState<TReason | null>(null);
   const [details, setDetails] = useState("");
 
   return (
-    <Dialog visible={visible} onRequestClose={onRequestClose} title="Report">
+    <Dialog visible={visible} onRequestClose={onRequestClose} title={title}>
       <RadioGroup
-        label="Why are you reporting this?"
+        label={reasonGroupLabel}
         options={reasonOptions}
         value={reason}
         onChange={setReason}
       />
-      <TextArea
-        label="Anything else moderators should know? (optional)"
-        value={details}
-        onChangeText={setDetails}
-        rows={2}
-      />
+      <TextArea label={detailsLabel} value={details} onChangeText={setDetails} rows={2} />
       <View className="flex-row justify-end gap-2">
         <Button variant="text" onPress={onRequestClose}>
-          Cancel
+          {cancelLabel}
         </Button>
         <Button
           variant="destructive"
           disabled={reason === null || submitting}
           onPress={() => reason && onConfirm(reason, details.trim())}
         >
-          Submit report
+          {confirmLabel}
         </Button>
       </View>
     </Dialog>

@@ -11,10 +11,13 @@ export interface CommentProps {
   timestampLabel: string;
   segments: readonly MentionTextSegment[];
   isEdited?: boolean;
-  /** Hidden content shows a muted placeholder instead of the body (moderation evidence is preserved in the data, not shown here). */
+  /** Hidden content shows this placeholder instead of the body (moderation evidence is preserved in the data, not shown here). Required together with isHidden so the caller supplies translated text rather than this component hardcoding English. */
   isHidden?: boolean;
+  hiddenPlaceholderText?: string;
   /** Edit/Hide/Report, resolved by the caller from the viewer's role - this component renders whatever it is given. */
   actions?: readonly MenuItem[];
+  /** accessibilityLabel for the overflow trigger, translated by the caller. */
+  moreActionsLabel?: string;
   className?: string;
 }
 
@@ -25,7 +28,9 @@ export function Comment({
   segments,
   isEdited = false,
   isHidden = false,
+  hiddenPlaceholderText,
   actions,
+  moreActionsLabel = "More actions",
   className,
 }: CommentProps) {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -51,7 +56,7 @@ export function Comment({
         {actions && actions.length > 0 ? (
           <IconButton
             icon={<MoreIcon size={18} />}
-            accessibilityLabel="More actions"
+            accessibilityLabel={moreActionsLabel}
             onPress={() => setMenuVisible(true)}
           />
         ) : null}
@@ -59,7 +64,7 @@ export function Comment({
 
       {isHidden ? (
         <Text variant="bodyMedium" tone="muted">
-          This content was hidden by a moderator.
+          {hiddenPlaceholderText}
         </Text>
       ) : (
         <MentionText segments={segments} />

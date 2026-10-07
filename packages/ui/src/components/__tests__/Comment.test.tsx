@@ -29,19 +29,18 @@ describe("Comment", () => {
     expect(screen.getByText("(edited)")).toBeTruthy();
   });
 
-  it("shows a moderation placeholder instead of the body when hidden", () => {
+  it("shows the caller-supplied placeholder instead of the body when hidden", () => {
     render(
       <Comment
         authorName="Rahim"
         timestampLabel="2 minutes ago"
         segments={segments}
         isHidden
+        hiddenPlaceholderText="Hidden by a moderator"
       />,
     );
     expect(screen.queryByText("I'm on my way")).toBeNull();
-    expect(
-      screen.getByText("This content was hidden by a moderator."),
-    ).toBeTruthy();
+    expect(screen.getByText("Hidden by a moderator")).toBeTruthy();
   });
 
   it("opens the action menu and fires the selected action", () => {

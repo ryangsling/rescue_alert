@@ -36,3 +36,4 @@ export {
 export { createContentReport } from "./report";
 export { listCaseNeeds, addCaseNeed, removeCaseNeed } from "./needs";
 export { watchCase, unwatchCase, isWatchingCase } from "./watcher";
+export { getProfileNames } from "./profile";

@@ -254,6 +254,26 @@ export const en = {
   content_report_details_label:
     "Anything else moderators should know? (optional)",
   content_report_submit: "Submit report",
+
+  assistance_on_site_rescue: "On-site rescue",
+  assistance_transport: "Transport",
+  assistance_veterinary_treatment: "Veterinary treatment",
+  assistance_temporary_foster: "Temporary foster",
+  assistance_shelter_coordination: "Shelter coordination",
+  assistance_case_coordination: "Case coordination",
+  assistance_financial_support: "Financial support",
+
+  role_label_creator: "Reporter",
+  role_label_coordinator: "Coordinator",
+  role_label_moderator: "Moderator",
+  role_label_participant: "Participant",
+  update_type_generic: "Official update",
+
+  report_reason_harassment: "Harassment",
+  report_reason_spam: "Spam",
+  report_reason_cruelty: "Cruelty",
+  report_reason_privacy_exposure: "Privacy exposure",
+  report_reason_other: "Other",
 } as const;
 
 export type TranslationKey = keyof typeof en;

@@ -248,4 +248,24 @@ export const bn: Record<keyof typeof en, string> = {
   content_report_reason_label: "আপনি কেন এটি রিপোর্ট করছেন?",
   content_report_details_label: "মডারেটরদের আর কিছু জানানোর আছে? (ঐচ্ছিক)",
   content_report_submit: "রিপোর্ট জমা দিন",
+
+  assistance_on_site_rescue: "সরাসরি উদ্ধার",
+  assistance_transport: "পরিবহন",
+  assistance_veterinary_treatment: "পশুচিকিৎসা",
+  assistance_temporary_foster: "সাময়িক ফস্টার",
+  assistance_shelter_coordination: "আশ্রয় সমন্বয়",
+  assistance_case_coordination: "কেস সমন্বয়",
+  assistance_financial_support: "আর্থিক সহায়তা",
+
+  role_label_creator: "রিপোর্টার",
+  role_label_coordinator: "সমন্বয়কারী",
+  role_label_moderator: "মডারেটর",
+  role_label_participant: "অংশগ্রহণকারী",
+  update_type_generic: "অফিসিয়াল আপডেট",
+
+  report_reason_harassment: "হয়রানি",
+  report_reason_spam: "স্প্যাম",
+  report_reason_cruelty: "নির্যাতন",
+  report_reason_privacy_exposure: "গোপনীয়তা প্রকাশ",
+  report_reason_other: "অন্যান্য",
 };

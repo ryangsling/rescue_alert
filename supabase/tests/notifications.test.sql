@@ -42,8 +42,7 @@ declare
     (select id from animal_types where slug = 'dog'));
   v_got text;
 begin
-  insert into case_responses (case_id, responder_id, assistance_types)
-    values (v_case, pg_temp.uid('l_committed'), array['on_site_rescue']::assistance_type[]);
+  perform pg_temp.mk_response(v_case, pg_temp.uid('l_committed'));
 
   select pg_temp.names_of(array_agg(user_id)) into v_got from find_alert_candidates(v_case, 2);
   assert v_got = 'a_ok_1km,g_ok_1km_critical_only', 'radius 2: got ' || v_got;
@@ -110,8 +109,7 @@ do $$
 declare v_case uuid := pg_temp.mk_case(pg_temp.uid('creator'), 'critical');
 begin
   assert dispatch_case_alerts(v_case) > 0;
-  insert into case_responses (case_id, responder_id, assistance_types)
-    values (v_case, pg_temp.uid('a_ok_1km'), array['on_site_rescue']::assistance_type[]);
+  perform pg_temp.mk_response(v_case, pg_temp.uid('a_ok_1km'));
   perform pg_temp.age_case(v_case, 45);
   assert dispatch_case_alerts(v_case) = 0, 'no expansion once assistance is committed';
 end $$;
@@ -121,8 +119,7 @@ do $$
 declare v_case uuid := pg_temp.mk_case(pg_temp.uid('creator'), 'critical');
 begin
   perform dispatch_case_alerts(v_case);
-  insert into case_responses (case_id, responder_id, assistance_types)
-    values (v_case, pg_temp.uid('a_ok_1km'), array['on_site_rescue']::assistance_type[]);
+  perform pg_temp.mk_response(v_case, pg_temp.uid('a_ok_1km'));
   insert into case_needs (case_id, need_type) values (v_case, 'transport');
   perform pg_temp.age_case(v_case, 15);
   assert dispatch_case_alerts(v_case) = 1, 'expansion continues while a need is unfulfilled';

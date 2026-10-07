@@ -21,8 +21,7 @@ declare
   v_case uuid := pg_temp.mk_case(pg_temp.uid('ev_creator'), 'critical');
 begin
   insert into case_watchers (user_id, case_id) values (pg_temp.uid('ev_watcher'), v_case);
-  insert into case_responses (case_id, responder_id, assistance_types)
-    values (v_case, pg_temp.uid('ev_responder'), array['on_site_rescue']::assistance_type[]);
+  perform pg_temp.mk_response(v_case, pg_temp.uid('ev_responder'));
 
   -- publishing the case (draft, submitted, open) notifies nobody
   assert (select count(*) from notifications where recipient_id = pg_temp.uid('ev_creator')
@@ -30,11 +29,13 @@ begin
 
   -- a response tells the creator, and later changes fold into one row
   assert pg_temp.count_for('ev_creator', v_case, 'response_accepted_or_changed') = 1;
-  update case_responses set eta_at = now() + interval '30 minutes' where case_id = v_case;
+  call pg_temp.as_user(pg_temp.uid('ev_responder'),
+    format('update case_responses set eta_at = now() + interval ''30 minutes'' where case_id = %L', v_case));
   assert pg_temp.count_for('ev_creator', v_case, 'response_accepted_or_changed') = 1, 'response changes group';
   assert (select (payload->>'count')::int from notifications
           where recipient_id = pg_temp.uid('ev_creator') and category = 'response_accepted_or_changed') = 2;
-  update case_responses set updated_at = now() where case_id = v_case;
+  call pg_temp.as_user(pg_temp.uid('ev_responder'),
+    format('update case_responses set updated_at = now() where case_id = %L', v_case));
   assert (select (payload->>'count')::int from notifications
           where recipient_id = pg_temp.uid('ev_creator') and category = 'response_accepted_or_changed') = 2,
     'an unrelated column change is not a response change';

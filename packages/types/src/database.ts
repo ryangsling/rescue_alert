@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17";
+    PostgrestVersion: "14.5";
   };
   public: {
     Tables: {
@@ -1729,6 +1729,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      extract_mentions: { Args: { p_body: string }; Returns: string[] };
       find_alert_candidates: {
         Args: { p_case_id: string; p_radius_km: number };
         Returns: {
@@ -2025,7 +2026,7 @@ export type Database = {
         | "harassment"
         | "privacy_exposure"
         | "other";
-      report_target_type: "case" | "comment" | "profile" | "media";
+      report_target_type: "case" | "comment" | "profile" | "media" | "reply";
       response_commitment_status:
         | "committed"
         | "confirmed"
@@ -2308,7 +2309,7 @@ export const Constants = {
         "privacy_exposure",
         "other",
       ],
-      report_target_type: ["case", "comment", "profile", "media"],
+      report_target_type: ["case", "comment", "profile", "media", "reply"],
       response_commitment_status: [
         "committed",
         "confirmed",

@@ -73,3 +73,28 @@ create function pg_temp.names_of(p_ids uuid[]) returns text language sql as $$
   select coalesce(string_agg(n.name, ',' order by n.name), '')
   from names n where n.id = any(p_ids);
 $$;
+
+-- Runs p_sql as p_actor (authenticated), per the Part 12 trigger's
+-- requirement that case_responses writes come from auth.uid() itself.
+create procedure pg_temp.as_user(p_actor uuid, p_sql text) language plpgsql as $$
+begin
+  perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  execute 'set local role authenticated';
+  execute p_sql;
+  execute 'reset role';
+end $$;
+
+-- Commits a response to a case as p_responder, returning its id.
+create function pg_temp.mk_response(
+  p_case uuid, p_responder uuid, p_types assistance_type[] default array['on_site_rescue']::assistance_type[]
+) returns uuid language plpgsql as $$
+declare v_id uuid;
+begin
+  perform set_config('request.jwt.claim.sub', p_responder::text, true);
+  set local role authenticated;
+  insert into case_responses (case_id, responder_id, assistance_types)
+    values (p_case, p_responder, p_types)
+    returning id into v_id;
+  reset role;
+  return v_id;
+end $$;

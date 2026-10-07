@@ -32,6 +32,11 @@ export {
   ServerCrash as ErrorIcon,
   Share2 as ShareIcon,
   Flag as ReportIcon,
+  // Not in DESIGN.md's list - needed for Part 12's comment/reply
+  // overflow menu and mention picker, same verification standard.
+  MoreVertical as MoreIcon,
+  AtSign as MentionIcon,
+  Reply as ReplyIcon,
 } from "lucide-react-native";
 
 export type { LucideIcon, LucideProps } from "lucide-react-native";

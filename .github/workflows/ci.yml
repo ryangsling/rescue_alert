@@ -40,6 +40,20 @@ jobs:
 
       - name: Build
         run: pnpm turbo run build
+        env:
+          # Publishable, not secret (AGENTS.md: only the service-role
+          # key must never reach a client) - needed because Expo's
+          # static web export eagerly evaluates every route's module
+          # graph at build time, including supabase-client.ts's
+          # module-scope createClient() call, for any route it turns
+          # into a dynamic SSR function (first hit by Part 12's
+          # apps/mobile/case/[id] - the first dynamic mobile route).
+          # Next.js defers that same evaluation to request time, which
+          # is why apps/web's build never needed this.
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
 
   sql:
     runs-on: ubuntu-latest

@@ -3,9 +3,9 @@ import { buildMentionToken, splitMentionSegments } from "../mention";
 
 describe("buildMentionToken", () => {
   it("wraps a name and id in the @[Name](id) shape", () => {
-    expect(buildMentionToken("Rahim", "c100f342-7586-458f-b912-f4db3934a1f4")).toBe(
-      "@[Rahim](c100f342-7586-458f-b912-f4db3934a1f4)",
-    );
+    expect(
+      buildMentionToken("Rahim", "c100f342-7586-458f-b912-f4db3934a1f4"),
+    ).toBe("@[Rahim](c100f342-7586-458f-b912-f4db3934a1f4)");
   });
 });
 

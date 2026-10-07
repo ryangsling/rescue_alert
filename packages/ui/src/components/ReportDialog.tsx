@@ -43,7 +43,12 @@ export function ReportDialog<TReason extends string>({
         value={reason}
         onChange={setReason}
       />
-      <TextArea label={detailsLabel} value={details} onChangeText={setDetails} rows={2} />
+      <TextArea
+        label={detailsLabel}
+        value={details}
+        onChangeText={setDetails}
+        rows={2}
+      />
       <View className="flex-row justify-end gap-2">
         <Button variant="text" onPress={onRequestClose}>
           {cancelLabel}

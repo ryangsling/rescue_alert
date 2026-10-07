@@ -231,7 +231,8 @@ export const bn: Record<keyof typeof en, string> = {
   comment_edit_action: "সম্পাদনা করুন",
   comment_hide_action: "লুকান",
   comment_report_action: "রিপোর্ট করুন",
-  comment_hidden_placeholder: "এই বিষয়বস্তু একজন মডারেটর দ্বারা লুকানো হয়েছে।",
+  comment_hidden_placeholder:
+    "এই বিষয়বস্তু একজন মডারেটর দ্বারা লুকানো হয়েছে।",
   comment_mention_action: "কাউকে উল্লেখ করুন",
 
   update_composer_label: "একটি অফিসিয়াল আপডেট পোস্ট করুন",

@@ -47,7 +47,11 @@ import {
   buildMentionToken,
   splitMentionSegments,
 } from "@rescue-alert/validation";
-import { translate, useLocale, type TranslationKey } from "@rescue-alert/localization";
+import {
+  translate,
+  useLocale,
+  type TranslationKey,
+} from "@rescue-alert/localization";
 import type { Database } from "@rescue-alert/types";
 import { supabase } from "../../supabase-client";
 
@@ -123,7 +127,11 @@ const RESPONSE_STATUS_LABEL_KEY: Record<ResponseStatus, TranslationKey> = {
 
 function responseStatusTone(status: ResponseStatus): StatusChipTone {
   if (status === "confirmed" || status === "completed") return "success";
-  if (status === "declined" || status === "unresponsive" || status === "withdrawn")
+  if (
+    status === "declined" ||
+    status === "unresponsive" ||
+    status === "withdrawn"
+  )
     return "neutral";
   return "support";
 }
@@ -142,7 +150,10 @@ const REPORT_REASONS = [
   { value: "harassment" as const, key: "report_reason_harassment" as const },
   { value: "spam" as const, key: "report_reason_spam" as const },
   { value: "cruelty" as const, key: "report_reason_cruelty" as const },
-  { value: "privacy_exposure" as const, key: "report_reason_privacy_exposure" as const },
+  {
+    value: "privacy_exposure" as const,
+    key: "report_reason_privacy_exposure" as const,
+  },
   { value: "other" as const, key: "report_reason_other" as const },
 ];
 
@@ -176,13 +187,17 @@ export default function CaseDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [assistanceSelected, setAssistanceSelected] = useState<Set<AssistanceType>>(new Set());
-  const [etaAt, setEtaAt] = useState("");
+  const [assistanceSelected, setAssistanceSelected] = useState<
+    Set<AssistanceType>
+  >(new Set());
   const [availabilityNote, setAvailabilityNote] = useState("");
-  const [withdrawingResponseId, setWithdrawingResponseId] = useState<string | null>(null);
-  const [reportTarget, setReportTarget] = useState<
-    { targetType: "comment" | "reply" | "media"; targetId: string } | null
+  const [withdrawingResponseId, setWithdrawingResponseId] = useState<
+    string | null
   >(null);
+  const [reportTarget, setReportTarget] = useState<{
+    targetType: "comment" | "reply" | "media";
+    targetId: string;
+  } | null>(null);
 
   const [composerBody, setComposerBody] = useState("");
   const [composerTarget, setComposerTarget] = useState<ComposerTarget>(null);
@@ -232,13 +247,17 @@ export default function CaseDetailScreen() {
     setUpdates(updateData ?? []);
 
     if (uid) {
-      const [{ data: creator }, { data: coordinator }, { data: moderator }, watching] =
-        await Promise.all([
-          supabase.rpc("is_case_creator", { p_case_id: id }),
-          supabase.rpc("is_case_coordinator", { p_case_id: id }),
-          supabase.rpc("is_moderator_or_admin"),
-          isWatchingCase(supabase, uid, id),
-        ]);
+      const [
+        { data: creator },
+        { data: coordinator },
+        { data: moderator },
+        watching,
+      ] = await Promise.all([
+        supabase.rpc("is_case_creator", { p_case_id: id }),
+        supabase.rpc("is_case_coordinator", { p_case_id: id }),
+        supabase.rpc("is_moderator_or_admin"),
+        isWatchingCase(supabase, uid, id),
+      ]);
       setIsCreator(creator ?? false);
       setIsCoordinator(coordinator ?? false);
       setIsModerator(moderator ?? false);
@@ -270,27 +289,52 @@ export default function CaseDetailScreen() {
       .channel(`case-detail-${id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "case_responses", filter: `case_id=eq.${id}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "case_responses",
+          filter: `case_id=eq.${id}`,
+        },
         () => void loadAll(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "case_needs", filter: `case_id=eq.${id}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "case_needs",
+          filter: `case_id=eq.${id}`,
+        },
         () => void loadAll(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "case_comments", filter: `case_id=eq.${id}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "case_comments",
+          filter: `case_id=eq.${id}`,
+        },
         () => void loadAll(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "case_updates", filter: `case_id=eq.${id}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "case_updates",
+          filter: `case_id=eq.${id}`,
+        },
         () => void loadAll(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "rescue_cases", filter: `id=eq.${id}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "rescue_cases",
+          filter: `id=eq.${id}`,
+        },
         () => void loadAll(),
       )
       .subscribe();
@@ -307,7 +351,10 @@ export default function CaseDetailScreen() {
 
   function insertMention(candidateId: string) {
     const name = profileNames[candidateId] ?? "";
-    setComposerBody((body) => `${body}${body ? " " : ""}${buildMentionToken(name, candidateId)} `);
+    setComposerBody(
+      (body) =>
+        `${body}${body ? " " : ""}${buildMentionToken(name, candidateId)} `,
+    );
     setMentionPickerOpen(false);
   }
 
@@ -316,18 +363,19 @@ export default function CaseDetailScreen() {
     await createResponse(supabase, userId, {
       caseId: id,
       assistanceTypes: [...assistanceSelected],
-      etaAt: etaAt || undefined,
       availabilityNote: availabilityNote || undefined,
     });
     setAssistanceSelected(new Set());
-    setEtaAt("");
     setAvailabilityNote("");
     await loadAll();
   }
 
   async function handleWithdraw(reason: string) {
     if (!withdrawingResponseId) return;
-    await withdrawResponse(supabase, { responseId: withdrawingResponseId, reason });
+    await withdrawResponse(supabase, {
+      responseId: withdrawingResponseId,
+      reason,
+    });
     setWithdrawingResponseId(null);
     await loadAll();
   }
@@ -343,7 +391,10 @@ export default function CaseDetailScreen() {
   async function handleSubmitComposer() {
     if (!id || !userId || !composerTarget || !composerBody.trim()) return;
     if (composerTarget === "comment") {
-      await createComment(supabase, userId, { caseId: id, body: composerBody.trim() });
+      await createComment(supabase, userId, {
+        caseId: id,
+        body: composerBody.trim(),
+      });
     } else {
       await createReply(supabase, userId, {
         commentId: composerTarget.replyTo,
@@ -449,11 +500,15 @@ export default function CaseDetailScreen() {
         <CaseHeader
           urgency={caseRow.urgency}
           title={caseRow.title}
-          areaLabel={[caseRow.upazila_or_thana, caseRow.district].filter(Boolean).join(", ")}
+          areaLabel={[caseRow.upazila_or_thana, caseRow.district]
+            .filter(Boolean)
+            .join(", ")}
           lastUpdateLabel={new Date(caseRow.updated_at).toLocaleString(locale)}
           statusLabel={t(STATUS_LABEL_KEY[caseRow.status])}
           statusTone={caseStatusTone(caseRow.status)}
-          onReport={() => setReportTarget({ targetType: "comment", targetId: caseRow.id })}
+          onReport={() =>
+            setReportTarget({ targetType: "comment", targetId: caseRow.id })
+          }
         />
 
         {isCaseClosed ? (
@@ -471,7 +526,9 @@ export default function CaseDetailScreen() {
 
         {!isCaseClosed && !myResponse && userId ? (
           <Stack gap="2">
-            <Text variant="titleMedium">{t("response_assistance_types_heading")}</Text>
+            <Text variant="titleMedium">
+              {t("response_assistance_types_heading")}
+            </Text>
             {ASSISTANCE_TYPES.map((type) => (
               <Checkbox
                 key={type}
@@ -488,7 +545,7 @@ export default function CaseDetailScreen() {
               />
             ))}
             <TextArea
-              label={t("response_eta_label")}
+              label={t("response_availability_note_label")}
               value={availabilityNote}
               onChangeText={setAvailabilityNote}
               rows={2}
@@ -517,14 +574,36 @@ export default function CaseDetailScreen() {
             coordinatorActions={
               isCoordinatorLike && response.responder_id !== userId
                 ? [
-                    { label: t("coordinator_confirm_action"), onPress: () => handleCoordinatorStatus(response.id, "confirmed") },
-                    { label: t("coordinator_complete_action"), onPress: () => handleCoordinatorStatus(response.id, "completed") },
-                    { label: t("coordinator_decline_action"), onPress: () => handleCoordinatorStatus(response.id, "declined") },
-                    { label: t("coordinator_mark_unresponsive_action"), onPress: () => handleCoordinatorStatus(response.id, "unresponsive") },
+                    {
+                      label: t("coordinator_confirm_action"),
+                      onPress: () =>
+                        handleCoordinatorStatus(response.id, "confirmed"),
+                    },
+                    {
+                      label: t("coordinator_complete_action"),
+                      onPress: () =>
+                        handleCoordinatorStatus(response.id, "completed"),
+                    },
+                    {
+                      label: t("coordinator_decline_action"),
+                      onPress: () =>
+                        handleCoordinatorStatus(response.id, "declined"),
+                    },
+                    {
+                      label: t("coordinator_mark_unresponsive_action"),
+                      onPress: () =>
+                        handleCoordinatorStatus(response.id, "unresponsive"),
+                    },
                   ]
                 : response.responder_id === userId &&
-                    (response.status === "committed" || response.status === "confirmed")
-                  ? [{ label: t("response_withdraw_action"), onPress: () => setWithdrawingResponseId(response.id) }]
+                    (response.status === "committed" ||
+                      response.status === "confirmed")
+                  ? [
+                      {
+                        label: t("response_withdraw_action"),
+                        onPress: () => setWithdrawingResponseId(response.id),
+                      },
+                    ]
                   : undefined
             }
           />
@@ -543,7 +622,11 @@ export default function CaseDetailScreen() {
             {ASSISTANCE_TYPES.filter(
               (type) => !needs.some((n) => n.need_type === type),
             ).map((type) => (
-              <Button key={type} variant="outline" onPress={() => handleToggleNeed(type)}>
+              <Button
+                key={type}
+                variant="outline"
+                onPress={() => handleToggleNeed(type)}
+              >
                 {t(ASSISTANCE_LABEL_KEY[type])}
               </Button>
             ))}
@@ -602,9 +685,18 @@ export default function CaseDetailScreen() {
               hiddenPlaceholderText: t("comment_hidden_placeholder"),
               actions: [
                 ...(c.author_id === userId || isModerator
-                  ? [{ label: t("comment_hide_action"), onSelect: () => handleHideComment(c.id) }]
+                  ? [
+                      {
+                        label: t("comment_hide_action"),
+                        onSelect: () => handleHideComment(c.id),
+                      },
+                    ]
                   : []),
-                { label: t("comment_report_action"), onSelect: () => setReportTarget({ targetType: "comment", targetId: c.id }) },
+                {
+                  label: t("comment_report_action"),
+                  onSelect: () =>
+                    setReportTarget({ targetType: "comment", targetId: c.id }),
+                },
               ],
             },
             replies: c.comment_replies.map((r) => ({
@@ -617,13 +709,26 @@ export default function CaseDetailScreen() {
               hiddenPlaceholderText: t("comment_hidden_placeholder"),
               actions: [
                 ...(r.author_id === userId || isModerator
-                  ? [{ label: t("comment_hide_action"), onSelect: () => handleHideReply(r.id) }]
+                  ? [
+                      {
+                        label: t("comment_hide_action"),
+                        onSelect: () => handleHideReply(r.id),
+                      },
+                    ]
                   : []),
-                { label: t("comment_report_action"), onSelect: () => setReportTarget({ targetType: "reply", targetId: r.id }) },
+                {
+                  label: t("comment_report_action"),
+                  onSelect: () =>
+                    setReportTarget({ targetType: "reply", targetId: r.id }),
+                },
               ],
             })),
           }))}
-          onReplyPress={isCaseClosed ? undefined : (commentId) => openComposer({ replyTo: commentId })}
+          onReplyPress={
+            isCaseClosed
+              ? undefined
+              : (commentId) => openComposer({ replyTo: commentId })
+          }
           replyComposer={
             composerTarget && composerTarget !== "comment"
               ? {
@@ -637,12 +742,21 @@ export default function CaseDetailScreen() {
                         rows={2}
                       />
                       {containsPersonalContactInfo(composerBody) ? (
-                        <Banner tone="warning" message={t("privacy_warning_message")} />
+                        <Banner
+                          tone="warning"
+                          message={t("privacy_warning_message")}
+                        />
                       ) : null}
-                      <Button variant="text" onPress={() => setMentionPickerOpen(true)}>
+                      <Button
+                        variant="text"
+                        onPress={() => setMentionPickerOpen(true)}
+                      >
                         {t("comment_mention_action")}
                       </Button>
-                      <Button disabled={!composerBody.trim()} onPress={handleSubmitComposer}>
+                      <Button
+                        disabled={!composerBody.trim()}
+                        onPress={handleSubmitComposer}
+                      >
                         {t("comment_reply_submit")}
                       </Button>
                     </Stack>
@@ -663,10 +777,17 @@ export default function CaseDetailScreen() {
               }}
               rows={2}
             />
-            {composerTarget === "comment" && containsPersonalContactInfo(composerBody) ? (
+            {composerTarget === "comment" &&
+            containsPersonalContactInfo(composerBody) ? (
               <Banner tone="warning" message={t("privacy_warning_message")} />
             ) : null}
-            <Button variant="text" onPress={() => { setComposerTarget("comment"); setMentionPickerOpen(true); }}>
+            <Button
+              variant="text"
+              onPress={() => {
+                setComposerTarget("comment");
+                setMentionPickerOpen(true);
+              }}
+            >
               {t("comment_mention_action")}
             </Button>
             <Button
@@ -699,7 +820,10 @@ export default function CaseDetailScreen() {
       <ReportDialog
         visible={reportTarget !== null}
         onRequestClose={() => setReportTarget(null)}
-        reasonOptions={REPORT_REASONS.map((r) => ({ value: r.value, label: t(r.key) }))}
+        reasonOptions={REPORT_REASONS.map((r) => ({
+          value: r.value,
+          label: t(r.key),
+        }))}
         onConfirm={handleSubmitReport}
         title={t("content_report_title")}
         reasonGroupLabel={t("content_report_reason_label")}

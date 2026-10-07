@@ -105,7 +105,10 @@ describe("CaseDetailScreen", () => {
 
   it("shows a closed notice instead of the response form when the case is closed", async () => {
     mockFromResults.rescue_cases = {
-      data: { ...mockFromResults.rescue_cases.data as object, status: "closed" },
+      data: {
+        ...(mockFromResults.rescue_cases.data as object),
+        status: "closed",
+      },
       error: null,
     };
     renderScreen();

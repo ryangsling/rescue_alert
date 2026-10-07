@@ -66,9 +66,9 @@ describe("editComment", () => {
     const single = vi.fn().mockResolvedValue({ data: {}, error: null });
     const select = vi.fn(() => ({ single }));
     const eq = vi.fn(() => ({ select }));
-    const update = vi.fn<(values: Record<string, unknown>) => { eq: typeof eq }>(
-      () => ({ eq }),
-    );
+    const update = vi.fn<
+      (values: Record<string, unknown>) => { eq: typeof eq }
+    >(() => ({ eq }));
     const client = {
       from: vi.fn(() => ({ update })),
     } as unknown as SupabaseClient<Database>;

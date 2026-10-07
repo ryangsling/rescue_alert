@@ -31,7 +31,9 @@ export const assistanceTypeSchema = z.enum(ASSISTANCE_TYPES);
 /** RESP-001, RESP-002, RESP-003: the "I can help" action. */
 export const createResponseSchema = z.object({
   caseId: z.uuid(),
-  assistanceTypes: z.array(assistanceTypeSchema).min(1, "Choose at least one way you can help"),
+  assistanceTypes: z
+    .array(assistanceTypeSchema)
+    .min(1, "Choose at least one way you can help"),
   etaAt: z.iso.datetime().optional(),
   availabilityNote: z.string().trim().max(500).optional(),
 });

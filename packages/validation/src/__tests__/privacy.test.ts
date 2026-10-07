@@ -17,9 +17,7 @@ describe("containsPersonalContactInfo", () => {
   });
 
   it("flags a long generic digit run that reads as a phone number", () => {
-    expect(containsPersonalContactInfo("my number is 555-123-4567")).toBe(
-      true,
-    );
+    expect(containsPersonalContactInfo("my number is 555-123-4567")).toBe(true);
   });
 
   it("does not flag ordinary rescue-report text", () => {
@@ -31,8 +29,6 @@ describe("containsPersonalContactInfo", () => {
   });
 
   it("does not flag a short reference-like number", () => {
-    expect(containsPersonalContactInfo("case #4521 looks similar")).toBe(
-      false,
-    );
+    expect(containsPersonalContactInfo("case #4521 looks similar")).toBe(false);
   });
 });

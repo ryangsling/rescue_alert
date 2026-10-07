@@ -57,7 +57,10 @@ describe("withdrawResponse", () => {
 describe("updateResponseStatus", () => {
   it("updates only the status column", async () => {
     const { client, update } = mockClient();
-    await updateResponseStatus(client, { responseId: "r1", status: "confirmed" });
+    await updateResponseStatus(client, {
+      responseId: "r1",
+      status: "confirmed",
+    });
     expect(update).toHaveBeenCalledWith({ status: "confirmed" });
   });
 });

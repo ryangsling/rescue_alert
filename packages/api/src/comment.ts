@@ -61,7 +61,10 @@ export async function listCaseComments(client: Client, caseId: string) {
     .select("*, comment_replies(*)")
     .eq("case_id", caseId)
     .order("created_at", { ascending: true })
-    .order("created_at", { referencedTable: "comment_replies", ascending: true });
+    .order("created_at", {
+      referencedTable: "comment_replies",
+      ascending: true,
+    });
 }
 
 export async function listCaseUpdates(client: Client, caseId: string) {
@@ -95,11 +98,7 @@ export async function hideComment(client: Client, commentId: string) {
     .single();
 }
 
-export async function editReply(
-  client: Client,
-  replyId: string,
-  body: string,
-) {
+export async function editReply(client: Client, replyId: string, body: string) {
   return client
     .from("comment_replies")
     .update({ body, edited_at: new Date().toISOString() })

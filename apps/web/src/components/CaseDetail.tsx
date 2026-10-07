@@ -114,7 +114,10 @@ const REPORT_REASONS = [
   { value: "harassment" as const, key: "report_reason_harassment" as const },
   { value: "spam" as const, key: "report_reason_spam" as const },
   { value: "cruelty" as const, key: "report_reason_cruelty" as const },
-  { value: "privacy_exposure" as const, key: "report_reason_privacy_exposure" as const },
+  {
+    value: "privacy_exposure" as const,
+    key: "report_reason_privacy_exposure" as const,
+  },
   { value: "other" as const, key: "report_reason_other" as const },
 ];
 
@@ -152,13 +155,13 @@ export function CaseDetail({ caseId }: { caseId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [assistanceSelected, setAssistanceSelected] = useState<Set<AssistanceType>>(
-    new Set(),
-  );
+  const [assistanceSelected, setAssistanceSelected] = useState<
+    Set<AssistanceType>
+  >(new Set());
   const [availabilityNote, setAvailabilityNote] = useState("");
-  const [withdrawingResponseId, setWithdrawingResponseId] = useState<string | null>(
-    null,
-  );
+  const [withdrawingResponseId, setWithdrawingResponseId] = useState<
+    string | null
+  >(null);
   const [withdrawReason, setWithdrawReason] = useState("");
   const [reportTarget, setReportTarget] = useState<ReportTarget>(null);
   const [reportReason, setReportReason] = useState<string | null>(null);
@@ -210,13 +213,17 @@ export function CaseDetail({ caseId }: { caseId: string }) {
     setUpdates(updateData ?? []);
 
     if (uid) {
-      const [{ data: creator }, { data: coordinator }, { data: moderator }, watching] =
-        await Promise.all([
-          supabase.rpc("is_case_creator", { p_case_id: caseId }),
-          supabase.rpc("is_case_coordinator", { p_case_id: caseId }),
-          supabase.rpc("is_moderator_or_admin"),
-          isWatchingCase(supabase, uid, caseId),
-        ]);
+      const [
+        { data: creator },
+        { data: coordinator },
+        { data: moderator },
+        watching,
+      ] = await Promise.all([
+        supabase.rpc("is_case_creator", { p_case_id: caseId }),
+        supabase.rpc("is_case_coordinator", { p_case_id: caseId }),
+        supabase.rpc("is_moderator_or_admin"),
+        isWatchingCase(supabase, uid, caseId),
+      ]);
       setIsCreator(creator ?? false);
       setIsCoordinator(coordinator ?? false);
       setIsModerator(moderator ?? false);
@@ -246,27 +253,52 @@ export function CaseDetail({ caseId }: { caseId: string }) {
       .channel(`case-detail-${caseId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "case_responses", filter: `case_id=eq.${caseId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "case_responses",
+          filter: `case_id=eq.${caseId}`,
+        },
         () => void loadAll(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "case_needs", filter: `case_id=eq.${caseId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "case_needs",
+          filter: `case_id=eq.${caseId}`,
+        },
         () => void loadAll(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "case_comments", filter: `case_id=eq.${caseId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "case_comments",
+          filter: `case_id=eq.${caseId}`,
+        },
         () => void loadAll(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "case_updates", filter: `case_id=eq.${caseId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "case_updates",
+          filter: `case_id=eq.${caseId}`,
+        },
         () => void loadAll(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "rescue_cases", filter: `id=eq.${caseId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "rescue_cases",
+          filter: `id=eq.${caseId}`,
+        },
         () => void loadAll(),
       )
       .subscribe();
@@ -278,7 +310,10 @@ export function CaseDetail({ caseId }: { caseId: string }) {
   }, [caseId, loadAll]);
 
   function insertMention(candidateId: string, name: string) {
-    setComposerBody((body) => `${body}${body ? " " : ""}${buildMentionToken(name, candidateId)} `);
+    setComposerBody(
+      (body) =>
+        `${body}${body ? " " : ""}${buildMentionToken(name, candidateId)} `,
+    );
   }
 
   async function handleSubmitResponse() {
@@ -315,7 +350,10 @@ export function CaseDetail({ caseId }: { caseId: string }) {
   async function handleSubmitComposer() {
     if (!userId || !composerTarget || !composerBody.trim()) return;
     if (composerTarget === "comment") {
-      await createComment(supabase, userId, { caseId, body: composerBody.trim() });
+      await createComment(supabase, userId, {
+        caseId,
+        body: composerBody.trim(),
+      });
     } else {
       await createReply(supabase, userId, {
         commentId: composerTarget.replyTo,
@@ -372,7 +410,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
   if (error) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-bold text-critical">{t("case_detail_error_heading")}</h1>
+        <h1 className="text-xl font-bold text-critical">
+          {t("case_detail_error_heading")}
+        </h1>
         <p className="text-text-muted">{t("case_detail_error_message")}</p>
       </div>
     );
@@ -380,21 +420,27 @@ export function CaseDetail({ caseId }: { caseId: string }) {
   if (!caseRow) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-bold text-text">{t("case_detail_not_found_heading")}</h1>
+        <h1 className="text-xl font-bold text-text">
+          {t("case_detail_not_found_heading")}
+        </h1>
         <p className="text-text-muted">{t("case_detail_not_found_message")}</p>
       </div>
     );
   }
 
   const myResponse = responses.find((r) => r.responder_id === userId);
-  const mentionCandidates = Object.entries(profileNames).filter(([pid]) => pid !== userId);
+  const mentionCandidates = Object.entries(profileNames).filter(
+    ([pid]) => pid !== userId,
+  );
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <div>
         <h1 className="text-2xl font-bold text-text">{caseRow.title}</h1>
         <p className="text-text-muted">
-          {[caseRow.upazila_or_thana, caseRow.district].filter(Boolean).join(", ")}
+          {[caseRow.upazila_or_thana, caseRow.district]
+            .filter(Boolean)
+            .join(", ")}
         </p>
         <span className="inline-block rounded-full bg-support-container px-3 py-1 text-sm text-support">
           {t(STATUS_LABEL_KEY[caseRow.status])}
@@ -446,7 +492,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
             rows={2}
             className="rounded-md border border-border bg-surface p-3 text-text"
           />
-          <p className="text-sm text-text-muted">{t("disclaimer_no_ownership")}</p>
+          <p className="text-sm text-text-muted">
+            {t("disclaimer_no_ownership")}
+          </p>
           <button
             type="button"
             disabled={assistanceSelected.size === 0}
@@ -459,13 +507,20 @@ export function CaseDetail({ caseId }: { caseId: string }) {
       ) : null}
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-text">{t("section_responders_heading")}</h2>
+        <h2 className="text-lg font-semibold text-text">
+          {t("section_responders_heading")}
+        </h2>
         {responses.map((response) => (
-          <div key={response.id} className="rounded-md border border-border bg-surface p-3">
+          <div
+            key={response.id}
+            className="rounded-md border border-border bg-surface p-3"
+          >
             <p className="font-medium text-text">
               {profileNames[response.responder_id] ?? response.responder_id}
             </p>
-            <p className="text-text-muted">{response.assistance_types.join(", ")}</p>
+            <p className="text-text-muted">
+              {response.assistance_types.join(", ")}
+            </p>
             {response.availability_note ? (
               <p className="text-text-muted">{response.availability_note}</p>
             ) : null}
@@ -476,35 +531,44 @@ export function CaseDetail({ caseId }: { caseId: string }) {
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => handleCoordinatorStatus(response.id, "confirmed")}
+                  onClick={() =>
+                    handleCoordinatorStatus(response.id, "confirmed")
+                  }
                   className="min-h-9 rounded-full border border-border px-3 py-1 text-sm text-text"
                 >
                   {t("coordinator_confirm_action")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCoordinatorStatus(response.id, "completed")}
+                  onClick={() =>
+                    handleCoordinatorStatus(response.id, "completed")
+                  }
                   className="min-h-9 rounded-full border border-border px-3 py-1 text-sm text-text"
                 >
                   {t("coordinator_complete_action")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCoordinatorStatus(response.id, "declined")}
+                  onClick={() =>
+                    handleCoordinatorStatus(response.id, "declined")
+                  }
                   className="min-h-9 rounded-full border border-border px-3 py-1 text-sm text-text"
                 >
                   {t("coordinator_decline_action")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCoordinatorStatus(response.id, "unresponsive")}
+                  onClick={() =>
+                    handleCoordinatorStatus(response.id, "unresponsive")
+                  }
                   className="min-h-9 rounded-full border border-border px-3 py-1 text-sm text-text"
                 >
                   {t("coordinator_mark_unresponsive_action")}
                 </button>
               </div>
             ) : response.responder_id === userId &&
-              (response.status === "committed" || response.status === "confirmed") ? (
+              (response.status === "committed" ||
+                response.status === "confirmed") ? (
               <button
                 type="button"
                 onClick={() => setWithdrawingResponseId(response.id)}
@@ -518,7 +582,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-text">{t("section_needs_heading")}</h2>
+        <h2 className="text-lg font-semibold text-text">
+          {t("section_needs_heading")}
+        </h2>
         <div className="flex flex-wrap gap-2">
           {needs.map((need) => (
             <button
@@ -539,24 +605,26 @@ export function CaseDetail({ caseId }: { caseId: string }) {
         </div>
         {isCoordinatorLike ? (
           <div className="flex flex-wrap gap-2">
-            {ASSISTANCE_TYPES.filter((type) => !needs.some((n) => n.need_type === type)).map(
-              (type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => handleToggleNeed(type)}
-                  className="min-h-9 rounded-full border border-border px-3 py-1 text-sm text-text"
-                >
-                  + {t(ASSISTANCE_LABEL_KEY[type])}
-                </button>
-              ),
-            )}
+            {ASSISTANCE_TYPES.filter(
+              (type) => !needs.some((n) => n.need_type === type),
+            ).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => handleToggleNeed(type)}
+                className="min-h-9 rounded-full border border-border px-3 py-1 text-sm text-text"
+              >
+                + {t(ASSISTANCE_LABEL_KEY[type])}
+              </button>
+            ))}
           </div>
         ) : null}
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-text">{t("section_updates_heading")}</h2>
+        <h2 className="text-lg font-semibold text-text">
+          {t("section_updates_heading")}
+        </h2>
         {updates.map((update) => (
           <div
             key={update.id}
@@ -574,7 +642,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                     : t("role_label_participant")}
               </span>
               {update.is_pinned ? (
-                <span className="text-sm text-on-primary-container">Pinned</span>
+                <span className="text-sm text-on-primary-container">
+                  Pinned
+                </span>
               ) : null}
             </div>
             <p className="text-on-primary-container">{update.body}</p>
@@ -600,7 +670,10 @@ export function CaseDetail({ caseId }: { caseId: string }) {
               />
               <span className="text-text">{t("update_pin_label")}</span>
             </label>
-            <PrivacyWarning text={updateBody} label={t("privacy_warning_message")} />
+            <PrivacyWarning
+              text={updateBody}
+              label={t("privacy_warning_message")}
+            />
             <button
               type="button"
               disabled={!updateBody.trim()}
@@ -614,7 +687,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-text">{t("section_comments_heading")}</h2>
+        <h2 className="text-lg font-semibold text-text">
+          {t("section_comments_heading")}
+        </h2>
         {comments.map((comment) => (
           <div key={comment.id} className="flex flex-col gap-2">
             <div className="rounded-md bg-surface p-3">
@@ -630,12 +705,17 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                 ) : null}
               </div>
               {comment.is_hidden ? (
-                <p className="text-text-muted">{t("comment_hidden_placeholder")}</p>
+                <p className="text-text-muted">
+                  {t("comment_hidden_placeholder")}
+                </p>
               ) : (
                 <p className="text-text">
                   {splitMentionSegments(comment.body).map((segment, index) =>
                     segment.type === "mention" ? (
-                      <span key={index} className="rounded bg-primary-container px-1 text-primary">
+                      <span
+                        key={index}
+                        className="rounded bg-primary-container px-1 text-primary"
+                      >
                         @{segment.text}
                       </span>
                     ) : (
@@ -660,7 +740,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                 {comment.author_id === userId || isModerator ? (
                   <button
                     type="button"
-                    onClick={() => hideComment(supabase, comment.id).then(loadAll)}
+                    onClick={() =>
+                      hideComment(supabase, comment.id).then(loadAll)
+                    }
                     className="text-text-muted"
                   >
                     {t("comment_hide_action")}
@@ -668,7 +750,12 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => setReportTarget({ targetType: "comment", targetId: comment.id })}
+                  onClick={() =>
+                    setReportTarget({
+                      targetType: "comment",
+                      targetId: comment.id,
+                    })
+                  }
                   className="text-text-muted"
                 >
                   {t("comment_report_action")}
@@ -689,17 +776,23 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                       </span>
                     </div>
                     {reply.is_hidden ? (
-                      <p className="text-text-muted">{t("comment_hidden_placeholder")}</p>
+                      <p className="text-text-muted">
+                        {t("comment_hidden_placeholder")}
+                      </p>
                     ) : (
                       <p className="text-text">
-                        {splitMentionSegments(reply.body).map((segment, index) =>
-                          segment.type === "mention" ? (
-                            <span key={index} className="rounded bg-primary-container px-1 text-primary">
-                              @{segment.text}
-                            </span>
-                          ) : (
-                            <span key={index}>{segment.text}</span>
-                          ),
+                        {splitMentionSegments(reply.body).map(
+                          (segment, index) =>
+                            segment.type === "mention" ? (
+                              <span
+                                key={index}
+                                className="rounded bg-primary-container px-1 text-primary"
+                              >
+                                @{segment.text}
+                              </span>
+                            ) : (
+                              <span key={index}>{segment.text}</span>
+                            ),
                         )}
                       </p>
                     )}
@@ -707,7 +800,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                       {reply.author_id === userId || isModerator ? (
                         <button
                           type="button"
-                          onClick={() => hideReply(supabase, reply.id).then(loadAll)}
+                          onClick={() =>
+                            hideReply(supabase, reply.id).then(loadAll)
+                          }
                           className="text-text-muted"
                         >
                           {t("comment_hide_action")}
@@ -715,7 +810,12 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                       ) : null}
                       <button
                         type="button"
-                        onClick={() => setReportTarget({ targetType: "reply", targetId: reply.id })}
+                        onClick={() =>
+                          setReportTarget({
+                            targetType: "reply",
+                            targetId: reply.id,
+                          })
+                        }
                         className="text-text-muted"
                       >
                         {t("comment_report_action")}
@@ -737,11 +837,16 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                   rows={2}
                   className="rounded-md border border-border bg-surface p-3 text-text"
                 />
-                <PrivacyWarning text={composerBody} label={t("privacy_warning_message")} />
+                <PrivacyWarning
+                  text={composerBody}
+                  label={t("privacy_warning_message")}
+                />
                 {mentionCandidates.length > 0 ? (
                   <select
                     onChange={(event) => {
-                      const picked = mentionCandidates.find(([id]) => id === event.target.value);
+                      const picked = mentionCandidates.find(
+                        ([id]) => id === event.target.value,
+                      );
                       if (picked) insertMention(picked[0], picked[1]);
                       event.target.value = "";
                     }}
@@ -782,13 +887,18 @@ export function CaseDetail({ caseId }: { caseId: string }) {
               className="rounded-md border border-border bg-surface p-3 text-text"
             />
             {composerTarget === "comment" ? (
-              <PrivacyWarning text={composerBody} label={t("privacy_warning_message")} />
+              <PrivacyWarning
+                text={composerBody}
+                label={t("privacy_warning_message")}
+              />
             ) : null}
             {mentionCandidates.length > 0 ? (
               <select
                 onChange={(event) => {
                   setComposerTarget("comment");
-                  const picked = mentionCandidates.find(([id]) => id === event.target.value);
+                  const picked = mentionCandidates.find(
+                    ([id]) => id === event.target.value,
+                  );
                   if (picked) insertMention(picked[0], picked[1]);
                   event.target.value = "";
                 }}
@@ -856,7 +966,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
               {t("content_report_title")}
             </h3>
             <fieldset className="mb-4 flex flex-col gap-2">
-              <legend className="text-text">{t("content_report_reason_label")}</legend>
+              <legend className="text-text">
+                {t("content_report_reason_label")}
+              </legend>
               {REPORT_REASONS.map((r) => (
                 <label key={r.value} className="flex items-center gap-2">
                   <input

@@ -33,9 +33,7 @@ describe("ReportDialog", () => {
 
     fireEvent.press(screen.getByText("Harassment"));
     fireEvent.changeText(
-      screen.getByLabelText(
-        "Anything else moderators should know? (optional)",
-      ),
+      screen.getByLabelText("Anything else moderators should know? (optional)"),
       "repeated unwanted contact",
     );
     fireEvent.press(submit);

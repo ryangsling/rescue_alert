@@ -464,41 +464,56 @@ Verified on plain Postgres 16 + PostGIS with the repo's migrations applied and `
 
 ## Part 12 - Response, assignment, and coordination
 
-**Status:** Pending
+**Status:** Core response/coordination loop complete and verified on both platforms; media attachments, edit UI, and E2E coverage remain open (see "Not done" below)
+
+Part 1's schema already had every table this part needed (case_responses, case_needs, case_updates, case_comments, comment_replies, case_watchers) with RLS, but no application-layer rules or UI had ever used them. Added: a before-insert-or-update trigger on case_responses that RLS alone couldn't express (responders may only withdraw with a reason or edit their own offer while committed; coordinators may only move status among confirmed/completed/declined/unresponsive and never touch the responder's own fields; confirmed_by is stamped from auth.uid(), never trusted from the client - the same layered RLS+trigger pattern already used on profiles); a partial unique index so one responder can't hold two live commitments on a case; a needs-board sync trigger so case_needs.is_fulfilled follows a response's status automatically, including reopening a need if a confirmed response is later declined; mention support (@[Name](uuid) tokens, parsed identically by the database's extract_mentions and the client's splitMentionSegments, so the UI highlights exactly who gets notified); a 'reply' report target type. All applied to the live project; `get_advisors` showed two new findings from the first pass (a missing search_path pin, two trigger functions directly callable as RPCs) and both are fixed.
+
+Full case detail screens built on both apps (apps/mobile/src/app/case/[id].tsx, apps/web's counterpart) - the first screens in this project to actually read and write case_responses/case_needs/case_updates/case_comments/comment_replies, and the screen every dispatch-alerts push notification's `rescuealert://case/<id>` deep link resolves to (Part 11's last open item, now closed). Realtime is one channel per screen instance, filtered to the case's id across five tables, torn down on unmount.
 
 ### Tasks
 
-- [ ] "I can help" action on an open case, with selection of one or more assistance types
-- [ ] Estimated arrival or availability time
-- [ ] Withdrawal with a required reason
-- [ ] Multiple responders per case with distinct responsibilities, without overwriting one another
-- [ ] Needs board showing what remains unfilled
-- [ ] Coordinator controls marking assistance confirmed, completed, declined, or unresponsive
-- [ ] Explicit statement that accepting a case does not imply legal ownership of the animal
-- [ ] Comments with replies and participant mentions
-- [ ] Official updates from authorized participants, visually distinct from comments
-- [ ] Pinned critical instructions from a coordinator
-- [ ] Media attachments on updates
-- [ ] Privacy warning before posting text containing personal contact information
-- [ ] Reporting of comments and media
-- [ ] Editing and deletion preserving moderation evidence
-- [ ] Realtime updates to the case detail screen with bounded subscriptions
-- [ ] Sensitive contact information shared only with authorized participants
+- [x] "I can help" with assistance-type selection, on both platforms
+- [x] Availability note (free text) - no structured ETA/time-picker input exists; a real bug where the field was mislabeled "When will you arrive?" while actually collecting the free-text note was found and fixed before merging
+- [x] Withdrawal with a required reason - enforced at the database (CHECK constraint and the trigger), not just the UI
+- [x] Multiple responders per case with distinct responsibilities, without overwriting - one row per responder, a partial unique index prevents the same responder holding two live commitments
+- [x] Needs board - coordinator can add/remove a need; fulfillment follows response status automatically via the sync trigger
+- [x] Coordinator controls (confirm/complete/decline/mark unresponsive), restricted to creator/coordinator/moderator and never the responder themself
+- [x] No-ownership disclaimer, shown in the response form on both platforms
+- [x] Comments with replies and @mentions
+- [x] Official updates, visually distinct (left-border accent) from comments
+- [ ] Pinned critical instructions - `is_pinned` exists and shows a "Pinned" label, but pinned updates are not sorted or surfaced separately from the ordinary timeline
+- [ ] Media attachments on updates - `rescue_media.update_id` already supports this (Part 1), but neither case-detail screen displays any case media at all yet, let alone lets an update composer attach it
+- [x] Privacy warning before posting - live as the viewer types, in every composer, on both platforms
+- [x] Reporting of comments and replies - media reporting is not reachable since media is not displayed (see above)
+- [ ] Editing and deletion preserving moderation evidence - hide (soft-delete, preserving the row) is wired on both platforms; edit is not - `editComment`/`editReply` exist in packages/api but nothing in either screen calls them yet
+- [x] Realtime updates, bounded to one filtered channel per case per screen instance
+- [ ] Sensitive contact information shared only with authorized participants - `is_accepted_responder`/`get_case_exact_location` exist from Part 1 but neither screen renders a phone number or exact location at all yet, so this PRD requirement is not demonstrated either way in the new screens
 
 ### Tests
 
-- [ ] Two responders committing concurrently both persist, with no lost update
-- [ ] Withdrawal requires a reason and updates the needs board
-- [ ] An unauthorized user cannot post an official update, enforced at the database level
-- [ ] Contact information in comment text triggers the privacy warning
-- [ ] Case closed while a responder is viewing it resolves cleanly with no stale action
-- [ ] E2E: two volunteers coordinate one case end to end
+- [x] Two responders committing concurrently both persist, with no lost update - `response_coordination.test.sql`
+- [x] Withdrawal requires a reason and updates the needs board - same file, plus the needs-board sync is tested separately (confirm fulfils, decline reopens)
+- [ ] An unauthorized user cannot post an official update, enforced at the database level - already true via Part 1's `case_updates_insert` RLS policy, relied on but not given its own explicit test in this part
+- [x] Contact information triggers the privacy warning - unit-tested thoroughly (`containsPersonalContactInfo`); not exercised as a screen-level test
+- [ ] Case closed while a responder is viewing it resolves cleanly - the screen does recompute `isCaseClosed` reactively via the realtime subscription and hides response/reply actions accordingly, but no automated test proves this specific scenario
+- [ ] E2E: two volunteers coordinate one case end to end - not written (Part 19's job, per the plan's own structure, but flagged here since this part's own test list names it)
+- Also covered, beyond this part's own test list: mention extraction and notification (SQL), self-confirmation/cross-field-edit rejection for both responder and coordinator roles (SQL), re-committing after withdrawal (SQL)
 
 ### Success criteria
 
-- [ ] PRD acceptance criteria 5, 6, and 7 are demonstrably satisfied
-- [ ] Official updates are unmistakably distinct from comments
-- [ ] No coordination action silently overwrites another
+- [x] PRD acceptance criteria 5 and 6 (commit to a specific assistance type; multiple volunteers coordinate without overwriting each other) are demonstrably satisfied - the SQL tests above are the proof for criterion 6 specifically
+- [x] PRD acceptance criterion 7 (reporter or authorized coordinator can post official updates) is satisfied - RLS plus the screen-level composer on both platforms
+- [x] Official updates are unmistakably distinct from comments - left-border accent, reused identically from Part 5's `OfficialUpdate` component on mobile; matched by hand on web
+- [x] No coordination action silently overwrites another - the partial unique index and the response-rules trigger are the two mechanisms; both are mutation-tested in `response_coordination.test.sql`
+
+### Not done, and needed before this part is fully closed
+
+1. Media display and attachment on updates - needs a thumbnail/gallery view on the case detail screen (reusing Part 8's `uploadCaseMedia`/`getCaseMediaSignedUrl`, extended with `updateId` instead of only case-level) before "reporting of media" or "media attachments on updates" can be real.
+2. Pinned-update sorting - surface pinned updates above the ordinary timeline, not just a label.
+3. Edit UI for comments/replies - wire the existing `editComment`/`editReply` API functions into both screens (an inline edit mode, not a new dialog, is the natural fit).
+4. Sensitive-contact-info display - decide and build how `ResponderCard`'s `isAuthorizedViewer`/`phoneNumber` props and `get_case_exact_location` actually reach the case detail screen for an accepted responder/coordinator/moderator.
+5. An explicit SQL test asserting a non-participant cannot insert a `case_updates` row (the RLS policy already enforces this; it just has no dedicated proof in this part's own test file).
+6. Playwright/Maestro E2E for two volunteers coordinating one case - deferred to Part 19 per the plan's own structure, flagged here since Part 12's own test list names it directly.
 
 ## Part 13 - Case closure, outcomes, and rescue history
 

@@ -174,4 +174,78 @@ export const bn: Record<keyof typeof en, string> = {
   feed_view_map: "মানচিত্র",
   status_open: "খোলা",
   status_response_committed: "স্বেচ্ছাসেবক প্রতিশ্রুতিবদ্ধ",
+
+  status_draft: "খসড়া",
+  status_submitted: "জমা দেওয়া হয়েছে",
+  status_under_review: "পর্যালোচনাধীন",
+  status_rescue_in_progress: "উদ্ধার চলছে",
+  status_transporting: "পরিবহন চলছে",
+  status_at_clinic_foster_shelter: "ক্লিনিক, ফস্টার বা শেল্টারে",
+  status_follow_up_required: "ফলো-আপ প্রয়োজন",
+  status_no_longer_found: "আর পাওয়া যায়নি",
+  status_duplicate: "অনুলিপি",
+  status_false_report: "মিথ্যা রিপোর্ট",
+  status_spam: "স্প্যাম",
+  status_unsafe_or_prohibited_content: "অনিরাপদ বা নিষিদ্ধ বিষয়বস্তু",
+  status_cancelled_by_reporter: "রিপোর্টার দ্বারা বাতিল",
+  status_closed_by_moderator: "মডারেটর দ্বারা বন্ধ",
+
+  response_status_committed: "প্রতিশ্রুতিবদ্ধ",
+  response_status_confirmed: "নিশ্চিত",
+  response_status_completed: "সম্পন্ন",
+  response_status_declined: "প্রত্যাখ্যাত",
+  response_status_unresponsive: "সাড়া দেয়নি",
+  response_status_withdrawn: "প্রত্যাহার করা হয়েছে",
+
+  case_detail_loading: "কেস লোড হচ্ছে...",
+  case_detail_error_heading: "এই কেস লোড করা যায়নি",
+  case_detail_error_message:
+    "এই কেস লোড করতে সমস্যা হয়েছে। আপনার সংযোগ অস্থির হতে পারে।",
+  case_detail_not_found_heading: "কেস পাওয়া যায়নি",
+  case_detail_not_found_message:
+    "এই কেসটি সরানো হয়ে থাকতে পারে, বা আপনার এটিতে প্রবেশের অনুমতি নেই।",
+  case_detail_closed_notice: "এই কেসটি বন্ধ করা হয়েছে।",
+  section_responders_heading: "কারা সাহায্য করছেন",
+  section_needs_heading: "এখনও যা প্রয়োজন",
+  section_updates_heading: "অফিসিয়াল আপডেট",
+  section_comments_heading: "মন্তব্য",
+  disclaimer_no_ownership:
+    "একটি কেস গ্রহণ করলে প্রাণীর আইনগত মালিকানা পাওয়া যায় না।",
+
+  response_assistance_types_heading: "আপনি কীভাবে সাহায্য করতে পারেন?",
+  response_eta_label: "আপনি কখন পৌঁছাবেন? (ঐচ্ছিক)",
+  response_availability_note_label: "আরও কিছু জানাতে চান? (ঐচ্ছিক)",
+  response_withdraw_action: "প্রত্যাহার করুন",
+  response_withdraw_title: "আপনার প্রতিশ্রুতি প্রত্যাহার করুন",
+  response_withdraw_reason_label: "আপনি কেন প্রত্যাহার করছেন?",
+  coordinator_confirm_action: "নিশ্চিত করুন",
+  coordinator_complete_action: "সম্পন্ন চিহ্নিত করুন",
+  coordinator_decline_action: "প্রত্যাখ্যান করুন",
+  coordinator_mark_unresponsive_action: "সাড়া দেয়নি চিহ্নিত করুন",
+
+  comment_composer_label: "একটি মন্তব্য যুক্ত করুন",
+  comment_submit: "মন্তব্য পোস্ট করুন",
+  comment_reply_label: "উত্তর দিন",
+  comment_reply_composer_label: "একটি উত্তর লিখুন",
+  comment_reply_submit: "উত্তর পোস্ট করুন",
+  comment_edit_action: "সম্পাদনা করুন",
+  comment_hide_action: "লুকান",
+  comment_report_action: "রিপোর্ট করুন",
+  comment_hidden_placeholder: "এই বিষয়বস্তু একজন মডারেটর দ্বারা লুকানো হয়েছে।",
+  comment_mention_action: "কাউকে উল্লেখ করুন",
+
+  update_composer_label: "একটি অফিসিয়াল আপডেট পোস্ট করুন",
+  update_pin_label: "এই আপডেট পিন করুন",
+  update_submit: "আপডেট পোস্ট করুন",
+
+  watch_action: "এই কেস অনুসরণ করুন",
+  unwatch_action: "অনুসরণ বন্ধ করুন",
+
+  privacy_warning_message:
+    "এটিতে ফোন নম্বর বা ইমেল ঠিকানা থাকতে পারে বলে মনে হচ্ছে। পোস্ট করার আগে ব্যক্তিগত যোগাযোগের তথ্য সরিয়ে ফেলার কথা বিবেচনা করুন।",
+
+  content_report_title: "রিপোর্ট করুন",
+  content_report_reason_label: "আপনি কেন এটি রিপোর্ট করছেন?",
+  content_report_details_label: "মডারেটরদের আর কিছু জানানোর আছে? (ঐচ্ছিক)",
+  content_report_submit: "রিপোর্ট জমা দিন",
 };

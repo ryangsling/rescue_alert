@@ -176,6 +176,84 @@ export const en = {
   feed_view_map: "Map",
   status_open: "Open",
   status_response_committed: "Responder committed",
+
+  // Part 12: the remaining case_status values not already covered above.
+  status_draft: "Draft",
+  status_submitted: "Submitted",
+  status_under_review: "Under review",
+  status_rescue_in_progress: "Rescue in progress",
+  status_transporting: "Transporting",
+  status_at_clinic_foster_shelter: "At clinic, foster, or shelter",
+  status_follow_up_required: "Follow-up required",
+  status_no_longer_found: "No longer found",
+  status_duplicate: "Duplicate",
+  status_false_report: "False report",
+  status_spam: "Spam",
+  status_unsafe_or_prohibited_content: "Unsafe or prohibited content",
+  status_cancelled_by_reporter: "Cancelled by reporter",
+  status_closed_by_moderator: "Closed by moderator",
+
+  // Part 12: response commitment statuses, shown on ResponderCard.
+  response_status_committed: "Committed",
+  response_status_confirmed: "Confirmed",
+  response_status_completed: "Completed",
+  response_status_declined: "Declined",
+  response_status_unresponsive: "Unresponsive",
+  response_status_withdrawn: "Withdrawn",
+
+  // Part 12: case detail screen.
+  case_detail_loading: "Loading case...",
+  case_detail_error_heading: "Could not load this case",
+  case_detail_error_message:
+    "Something went wrong loading this case. Your connection may be unstable.",
+  case_detail_not_found_heading: "Case not found",
+  case_detail_not_found_message:
+    "This case may have been removed, or you may not have access to it.",
+  case_detail_closed_notice: "This case has been closed.",
+  section_responders_heading: "Who's helping",
+  section_needs_heading: "What's still needed",
+  section_updates_heading: "Official updates",
+  section_comments_heading: "Comments",
+  disclaimer_no_ownership:
+    "Accepting a case does not give you legal ownership of the animal.",
+
+  response_assistance_types_heading: "How can you help?",
+  response_eta_label: "When will you arrive? (optional)",
+  response_availability_note_label: "Anything else to share? (optional)",
+  response_withdraw_action: "Withdraw",
+  response_withdraw_title: "Withdraw your commitment",
+  response_withdraw_reason_label: "Why are you withdrawing?",
+  coordinator_confirm_action: "Confirm",
+  coordinator_complete_action: "Mark completed",
+  coordinator_decline_action: "Decline",
+  coordinator_mark_unresponsive_action: "Mark unresponsive",
+
+  comment_composer_label: "Add a comment",
+  comment_submit: "Post comment",
+  comment_reply_label: "Reply",
+  comment_reply_composer_label: "Write a reply",
+  comment_reply_submit: "Post reply",
+  comment_edit_action: "Edit",
+  comment_hide_action: "Hide",
+  comment_report_action: "Report",
+  comment_hidden_placeholder: "This content was hidden by a moderator.",
+  comment_mention_action: "Mention someone",
+
+  update_composer_label: "Post an official update",
+  update_pin_label: "Pin this update",
+  update_submit: "Post update",
+
+  watch_action: "Watch this case",
+  unwatch_action: "Stop watching",
+
+  privacy_warning_message:
+    "This looks like it includes a phone number or email address. Consider removing personal contact details before posting.",
+
+  content_report_title: "Report",
+  content_report_reason_label: "Why are you reporting this?",
+  content_report_details_label:
+    "Anything else moderators should know? (optional)",
+  content_report_submit: "Submit report",
 } as const;
 
 export type TranslationKey = keyof typeof en;

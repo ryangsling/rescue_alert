@@ -55,7 +55,12 @@ import {
 import type { Database } from "@rescue-alert/types";
 import { supabase } from "../../supabase-client";
 
-type CaseRow = Database["public"]["Tables"]["rescue_cases"]["Row"];
+// Never includes `location` - authenticated has no column grant for
+// it (see the rescue_cases select below), and anon has none at all.
+type CaseRow = Omit<
+  Database["public"]["Tables"]["rescue_cases"]["Row"],
+  "location"
+>;
 type ResponseRow = Database["public"]["Tables"]["case_responses"]["Row"];
 type NeedRow = Database["public"]["Tables"]["case_needs"]["Row"];
 type UpdateRow = Database["public"]["Tables"]["case_updates"]["Row"];
@@ -223,7 +228,18 @@ export default function CaseDetailScreen() {
       { data: updateData },
     ] = await Promise.all([
       supabase.auth.getUser(),
-      supabase.from("rescue_cases").select("*").eq("id", id).maybeSingle(),
+      // Never select("*") here: rescue_cases.location (the exact
+      // coordinate) is deliberately not in authenticated's column
+      // grant (get_case_exact_location() is the only way to read it),
+      // and anon has no grant on this table at all - see
+      // fix_exact_location_column_grants.sql.
+      supabase
+        .from("rescue_cases")
+        .select(
+          "id, creator_id, public_reference, incident_type, animal_type_id, urgency, status, title, description, approximate_location, division, district, upazila_or_thana, landmark, reported_at, last_seen_at, creator_on_site, exact_location_visibility, coordinator_id, organization_id, idempotency_key, created_at, updated_at, closed_at, closure_reason",
+        )
+        .eq("id", id)
+        .maybeSingle(),
       listCaseResponses(supabase, id),
       listCaseNeeds(supabase, id),
       listCaseComments(supabase, id),

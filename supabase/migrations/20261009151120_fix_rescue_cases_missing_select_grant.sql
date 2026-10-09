@@ -1,0 +1,11 @@
+-- rescue_cases has had a SELECT RLS policy (rescue_cases_select,
+-- is_case_visible(id)) since Part 1, but was never actually granted
+-- SELECT at the table level for anon or authenticated - every other
+-- client-facing table has this grant by default, this one apparently
+-- lost it in one of Part 1's own grant-tightening migrations
+-- (fix_anon_execute_revoke_wrong_role or a neighbor). Undetected until
+-- now because every existing read path went through a SECURITY
+-- DEFINER function (list_feed_cases, rescue_cases_public) that
+-- bypasses table grants entirely - Part 12's case detail screen is
+-- the first code ever to select from this table directly.
+grant select on rescue_cases to anon, authenticated;

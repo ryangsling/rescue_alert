@@ -70,3 +70,14 @@ export async function listCaseResponses(client: Client, caseId: string) {
     .eq("case_id", caseId)
     .order("created_at", { ascending: true });
 }
+
+/**
+ * Returns null unless the response is confirmed/completed and the
+ * caller is the case creator, coordinator, or a moderator/admin -
+ * see get_responder_phone() (Part 12 migration). user_private_details
+ * is owner-only RLS, so this function is the only path to a
+ * responder's phone number for anyone other than themselves.
+ */
+export async function getResponderPhone(client: Client, responseId: string) {
+  return client.rpc("get_responder_phone", { p_response_id: responseId });
+}

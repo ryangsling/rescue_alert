@@ -14,6 +14,8 @@ export {
   findNearbyDuplicateCases,
   uploadCaseMedia,
   getCaseMediaSignedUrl,
+  getCaseExactLocation,
+  listCaseMedia,
 } from "./case";
 export { listFeedCases, type FeedCase } from "./feed";
 export {
@@ -21,6 +23,7 @@ export {
   withdrawResponse,
   updateResponseStatus,
   listCaseResponses,
+  getResponderPhone,
 } from "./response";
 export {
   createComment,

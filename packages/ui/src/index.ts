@@ -39,4 +39,5 @@ export * from "./components/CommentThread";
 export * from "./components/MentionPicker";
 export * from "./components/WithdrawDialog";
 export * from "./components/ReportDialog";
+export * from "./components/EditTextDialog";
 export * from "./theme/ThemeProvider";

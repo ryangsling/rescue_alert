@@ -6,6 +6,7 @@ import {
   withdrawResponse,
   updateResponseStatus,
   listCaseResponses,
+  getResponderPhone,
 } from "../response";
 
 function mockClient() {
@@ -62,6 +63,21 @@ describe("updateResponseStatus", () => {
       status: "confirmed",
     });
     expect(update).toHaveBeenCalledWith({ status: "confirmed" });
+  });
+});
+
+describe("getResponderPhone", () => {
+  it("calls get_responder_phone with the response id", async () => {
+    const rpc = vi
+      .fn()
+      .mockResolvedValue({ data: "+8801711223344", error: null });
+    const client = { rpc } as unknown as SupabaseClient<Database>;
+
+    const result = await getResponderPhone(client, "response-1");
+    expect(rpc).toHaveBeenCalledWith("get_responder_phone", {
+      p_response_id: "response-1",
+    });
+    expect(result).toEqual({ data: "+8801711223344", error: null });
   });
 });
 

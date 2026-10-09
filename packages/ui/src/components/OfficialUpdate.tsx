@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Image, View } from "react-native";
 import { Text } from "../primitives/Text";
 
 export interface OfficialUpdateProps {
@@ -10,6 +10,10 @@ export interface OfficialUpdateProps {
   updateType: string;
   body: string;
   isPinned?: boolean;
+  /** Translated by the caller; shown only when isPinned is true. */
+  pinnedLabel?: string;
+  /** Signed URLs for any media attached to this update (Part 12). */
+  mediaUris?: readonly string[];
   className?: string;
 }
 
@@ -26,6 +30,8 @@ export function OfficialUpdate({
   updateType,
   body,
   isPinned = false,
+  pinnedLabel,
+  mediaUris,
   className,
 }: OfficialUpdateProps) {
   return (
@@ -47,9 +53,9 @@ export function OfficialUpdate({
             {actorRole}
           </Text>
         </View>
-        {isPinned ? (
+        {isPinned && pinnedLabel ? (
           <Text variant="labelMedium" className="text-on-primary-container">
-            Pinned
+            {pinnedLabel}
           </Text>
         ) : null}
       </View>
@@ -57,6 +63,18 @@ export function OfficialUpdate({
         {updateType}
       </Text>
       <Text className="text-on-primary-container">{body}</Text>
+      {mediaUris && mediaUris.length > 0 ? (
+        <View className="flex-row flex-wrap gap-2">
+          {mediaUris.map((uri) => (
+            <Image
+              key={uri}
+              testID="official-update-media"
+              source={{ uri }}
+              className="h-20 w-20 rounded-medium"
+            />
+          ))}
+        </View>
+      ) : null}
       <Text variant="caption" className="text-on-primary-container">
         {timestampLabel}
       </Text>

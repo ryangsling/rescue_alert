@@ -202,3 +202,33 @@ begin
 
   assert exists (select 1 from content_reports where target_type = 'reply'), 'reply reports must use their own target_type';
 end $$;
+
+-- 10. get_responder_phone: a phone number is exposed only once a
+-- response is accepted, and only to the case creator/coordinator/
+-- moderator - never to a bystander, and never for a merely committed
+-- offer. user_private_details is owner-only RLS, so this function is
+-- the only path; mk_user seeds every test user with the same test
+-- phone, so a non-null, matching result proves the join actually ran.
+do $$
+declare
+  v_case uuid := pg_temp.mk_case(pg_temp.uid('rc_creator'), 'critical');
+  v_response uuid := pg_temp.mk_response(v_case, pg_temp.uid('rc_responder_a'));
+begin
+  call pg_temp.as_user(pg_temp.uid('rc_creator'), format(
+    'create temp table if not exists phone_probe as select get_responder_phone(%L) as phone', v_response));
+  assert (select phone from phone_probe) is null, 'a merely committed offer must not expose a phone number yet';
+  drop table phone_probe;
+
+  call pg_temp.as_user(pg_temp.uid('rc_creator'), format(
+    'update case_responses set status = ''confirmed'' where id = %L', v_response));
+
+  call pg_temp.as_user(pg_temp.uid('rc_bystander'), format(
+    'create temp table if not exists phone_probe as select get_responder_phone(%L) as phone', v_response));
+  assert (select phone from phone_probe) is null, 'a bystander must never see a responder''s phone';
+  drop table phone_probe;
+
+  call pg_temp.as_user(pg_temp.uid('rc_creator'), format(
+    'create temp table if not exists phone_probe as select get_responder_phone(%L) as phone', v_response));
+  assert (select phone from phone_probe) = '+8801711223344', 'the creator must see an accepted responder''s phone';
+  drop table phone_probe;
+end $$;

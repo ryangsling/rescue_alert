@@ -49,7 +49,22 @@ describe("OfficialUpdate", () => {
     expect(screen.queryByText("Pinned")).toBeNull();
   });
 
-  it("shows a pinned label when isPinned is true", () => {
+  it("shows the caller-supplied pinned label when isPinned is true", () => {
+    render(
+      <OfficialUpdate
+        actorName="A"
+        actorRole="Moderator"
+        timestampLabel="now"
+        updateType="Notice"
+        body="Text"
+        isPinned
+        pinnedLabel="Pinned"
+      />,
+    );
+    expect(screen.getByText("Pinned")).toBeTruthy();
+  });
+
+  it("shows nothing for isPinned without a pinnedLabel", () => {
     render(
       <OfficialUpdate
         actorName="A"
@@ -60,6 +75,20 @@ describe("OfficialUpdate", () => {
         isPinned
       />,
     );
-    expect(screen.getByText("Pinned")).toBeTruthy();
+    expect(screen.queryByText("Pinned")).toBeNull();
+  });
+
+  it("renders media thumbnails when provided", () => {
+    render(
+      <OfficialUpdate
+        actorName="A"
+        actorRole="Moderator"
+        timestampLabel="now"
+        updateType="Notice"
+        body="Text"
+        mediaUris={["https://example.com/a.jpg", "https://example.com/b.jpg"]}
+      />,
+    );
+    expect(screen.getAllByTestId("official-update-media")).toHaveLength(2);
   });
 });

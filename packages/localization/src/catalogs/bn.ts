@@ -229,6 +229,8 @@ export const bn: Record<keyof typeof en, string> = {
   comment_reply_composer_label: "একটি উত্তর লিখুন",
   comment_reply_submit: "উত্তর পোস্ট করুন",
   comment_edit_action: "সম্পাদনা করুন",
+  comment_edit_title: "মন্তব্য সম্পাদনা করুন",
+  reply_edit_title: "উত্তর সম্পাদনা করুন",
   comment_hide_action: "লুকান",
   comment_report_action: "রিপোর্ট করুন",
   comment_hidden_placeholder:
@@ -237,10 +239,12 @@ export const bn: Record<keyof typeof en, string> = {
 
   update_composer_label: "একটি অফিসিয়াল আপডেট পোস্ট করুন",
   update_pin_label: "এই আপডেট পিন করুন",
+  update_pinned_label: "পিন করা হয়েছে",
   update_submit: "আপডেট পোস্ট করুন",
 
   watch_action: "এই কেস অনুসরণ করুন",
   unwatch_action: "অনুসরণ বন্ধ করুন",
+  view_exact_location_action: "নির্দিষ্ট অবস্থানের দিকনির্দেশ পান",
 
   privacy_warning_message:
     "এটিতে ফোন নম্বর বা ইমেল ঠিকানা থাকতে পারে বলে মনে হচ্ছে। পোস্ট করার আগে ব্যক্তিগত যোগাযোগের তথ্য সরিয়ে ফেলার কথা বিবেচনা করুন।",

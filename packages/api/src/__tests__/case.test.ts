@@ -4,7 +4,9 @@ import type { Database } from "@rescue-alert/types";
 import {
   createCase,
   findNearbyDuplicateCases,
+  getCaseExactLocation,
   getCaseMediaSignedUrl,
+  listCaseMedia,
   uploadCaseMedia,
 } from "../case";
 
@@ -120,6 +122,53 @@ describe("uploadCaseMedia", () => {
     });
     expect(result).toEqual({ data: { id: "media-row-1" }, error: null });
   });
+
+  it("forwards updateId when attaching media to an official update", async () => {
+    const upload = vi.fn().mockResolvedValue({ error: null });
+    const single = vi
+      .fn()
+      .mockResolvedValue({ data: { id: "media-row-1" }, error: null });
+    const select = vi.fn(() => ({ single }));
+    const insert = vi.fn(() => ({ select }));
+    const client = {
+      storage: { from: () => ({ upload }) },
+      from: () => ({ insert }),
+    } as unknown as SupabaseClient<Database>;
+
+    await uploadCaseMedia(client, {
+      caseId: "case-1",
+      uploaderId: "user-1",
+      mediaId: "media-1",
+      fileExtension: "jpg",
+      contentType: "image/jpeg",
+      bytes: new Uint8Array([1, 2, 3]),
+      updateId: "update-1",
+    });
+
+    expect(insert).toHaveBeenCalledWith({
+      case_id: "case-1",
+      update_id: "update-1",
+      uploader_id: "user-1",
+      storage_path: "case-1/media-1.jpg",
+      exif_stripped: true,
+      is_graphic: false,
+    });
+  });
+});
+
+describe("listCaseMedia", () => {
+  it("filters by case id, oldest first", async () => {
+    const order = vi.fn().mockResolvedValue({ data: [], error: null });
+    const eq = vi.fn(() => ({ order }));
+    const select = vi.fn(() => ({ eq }));
+    const client = {
+      from: vi.fn(() => ({ select })),
+    } as unknown as SupabaseClient<Database>;
+
+    await listCaseMedia(client, "case-1");
+    expect(eq).toHaveBeenCalledWith("case_id", "case-1");
+    expect(order).toHaveBeenCalledWith("created_at", { ascending: true });
+  });
 });
 
 describe("getCaseMediaSignedUrl", () => {
@@ -139,5 +188,33 @@ describe("getCaseMediaSignedUrl", () => {
 
     expect(createSignedUrl).toHaveBeenCalledWith("case-1/media-1.jpg", 120);
     expect(result).toEqual({ data: { signedUrl: "https://x" }, error: null });
+  });
+});
+
+describe("getCaseExactLocation", () => {
+  it("unwraps the single-row table response into a plain object", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [{ latitude: 23.7461, longitude: 90.3742 }],
+      error: null,
+    });
+    const client = { rpc } as unknown as SupabaseClient<Database>;
+
+    const result = await getCaseExactLocation(client, "case-1");
+
+    expect(rpc).toHaveBeenCalledWith("get_case_exact_location", {
+      p_case_id: "case-1",
+    });
+    expect(result).toEqual({
+      data: { latitude: 23.7461, longitude: 90.3742 },
+      error: null,
+    });
+  });
+
+  it("returns null data when the caller is not authorized (no row)", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+    const client = { rpc } as unknown as SupabaseClient<Database>;
+
+    const result = await getCaseExactLocation(client, "case-1");
+    expect(result).toEqual({ data: null, error: null });
   });
 });

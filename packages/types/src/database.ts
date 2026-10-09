@@ -1756,7 +1756,10 @@ export type Database = {
       generate_public_reference: { Args: never; Returns: string };
       get_case_exact_location: {
         Args: { p_case_id: string };
-        Returns: unknown;
+        Returns: {
+          latitude: number;
+          longitude: number;
+        }[];
       };
       get_case_location_history: {
         Args: { p_case_id: string };
@@ -1769,6 +1772,7 @@ export type Database = {
           location: unknown;
         }[];
       };
+      get_responder_phone: { Args: { p_response_id: string }; Returns: string };
       incident_type_label_en: {
         Args: { p_incident_type: Database["public"]["Enums"]["incident_type"] };
         Returns: string;

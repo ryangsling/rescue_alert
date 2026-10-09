@@ -56,6 +56,21 @@ export async function createCase(client: Client, input: CreateCaseInput) {
   );
 }
 
+/**
+ * Returns no row unless the caller is an accepted responder, the
+ * coordinator, an org member, or a moderator/admin for this case -
+ * see get_case_exact_location() (Part 1, Part 12 follow-up).
+ * latitude/longitude as plain doubles, never a raw geography value
+ * (PostgREST would otherwise serialize one as an unparseable WKB hex
+ * string - see list_feed_cases' own fix for the same issue).
+ */
+export async function getCaseExactLocation(client: Client, caseId: string) {
+  const { data, error } = await client.rpc("get_case_exact_location", {
+    p_case_id: caseId,
+  });
+  return { data: data?.[0] ?? null, error };
+}
+
 /** CASE-009. See find_nearby_duplicate_cases() for the disclosed default radius/timeframe. */
 export async function findNearbyDuplicateCases(
   client: Client,
@@ -93,6 +108,8 @@ export async function uploadCaseMedia(
     contentType: string;
     bytes: Blob | ArrayBuffer | Uint8Array;
     isGraphic?: boolean;
+    /** Part 12: attaches this upload to an official update rather than the case in general. */
+    updateId?: string;
   },
 ): Promise<UploadCaseMediaResult> {
   const storagePath = `${params.caseId}/${params.mediaId}.${params.fileExtension}`;
@@ -108,6 +125,7 @@ export async function uploadCaseMedia(
     .from("rescue_media")
     .insert({
       case_id: params.caseId,
+      update_id: params.updateId,
       uploader_id: params.uploaderId,
       storage_path: storagePath,
       exif_stripped: true,
@@ -117,6 +135,15 @@ export async function uploadCaseMedia(
     .single();
 
   return { data, error: error ? { message: error.message } : null };
+}
+
+/** Part 12: every media row for a case, oldest first - the case detail screen's media gallery and each update's own attachments. */
+export async function listCaseMedia(client: Client, caseId: string) {
+  return client
+    .from("rescue_media")
+    .select("*")
+    .eq("case_id", caseId)
+    .order("created_at", { ascending: true });
 }
 
 export interface SignedUrlResult {

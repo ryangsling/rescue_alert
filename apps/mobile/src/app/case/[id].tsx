@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView } from "react-native";
+import { Linking, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { buildExternalNavigationUrls } from "@rescue-alert/maps";
 import {
   Banner,
   Button,
   CaseHeader,
   Checkbox,
   CommentThread,
+  EditTextDialog,
   LoadingState,
+  MediaPicker,
   MentionPicker,
   NeedsSelector,
   ReportDialog,
@@ -19,6 +23,7 @@ import {
   TextArea,
   Timeline,
   WithdrawDialog,
+  type MediaItem,
   type StatusChipTone,
 } from "@rescue-alert/ui";
 import {
@@ -27,6 +32,8 @@ import {
   createReply,
   createCaseUpdate,
   createContentReport,
+  editComment,
+  editReply,
   hideComment,
   hideReply,
   updateResponseStatus,
@@ -35,12 +42,17 @@ import {
   listCaseComments,
   listCaseUpdates,
   listCaseNeeds,
+  listCaseMedia,
   addCaseNeed,
   removeCaseNeed,
   watchCase,
   unwatchCase,
   isWatchingCase,
   getProfileNames,
+  getResponderPhone,
+  getCaseExactLocation,
+  getCaseMediaSignedUrl,
+  uploadCaseMedia,
 } from "@rescue-alert/api";
 import {
   containsPersonalContactInfo,
@@ -54,6 +66,10 @@ import {
 } from "@rescue-alert/localization";
 import type { Database } from "@rescue-alert/types";
 import { supabase } from "../../supabase-client";
+import {
+  processImageForUpload,
+  type ProcessedImage,
+} from "../../lib/processImage";
 
 // Never includes `location` - authenticated has no column grant for
 // it (see the rescue_cases select below), and anon has none at all.
@@ -203,6 +219,11 @@ export default function CaseDetailScreen() {
     targetType: "comment" | "reply" | "media";
     targetId: string;
   } | null>(null);
+  const [editingTarget, setEditingTarget] = useState<{
+    type: "comment" | "reply";
+    id: string;
+    body: string;
+  } | null>(null);
 
   const [composerBody, setComposerBody] = useState("");
   const [composerTarget, setComposerTarget] = useState<ComposerTarget>(null);
@@ -210,6 +231,19 @@ export default function CaseDetailScreen() {
 
   const [updateBody, setUpdateBody] = useState("");
   const [updateIsPinned, setUpdateIsPinned] = useState(false);
+  const [updatePhotos, setUpdatePhotos] = useState<ProcessedImage[]>([]);
+  const [processingUpdatePhoto, setProcessingUpdatePhoto] = useState(false);
+  const [updateMediaUrls, setUpdateMediaUrls] = useState<
+    Record<string, string[]>
+  >({});
+
+  const [responderPhones, setResponderPhones] = useState<
+    Record<string, string>
+  >({});
+  const [exactLocation, setExactLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const isCoordinatorLike = isCreator || isCoordinator || isModerator;
   const isCaseClosed = caseRow ? CLOSED_STATUSES.has(caseRow.status) : false;
@@ -226,6 +260,7 @@ export default function CaseDetailScreen() {
       { data: needData },
       { data: commentData },
       { data: updateData },
+      { data: mediaData },
     ] = await Promise.all([
       supabase.auth.getUser(),
       // Never select("*") here: rescue_cases.location (the exact
@@ -244,6 +279,7 @@ export default function CaseDetailScreen() {
       listCaseNeeds(supabase, id),
       listCaseComments(supabase, id),
       listCaseUpdates(supabase, id),
+      listCaseMedia(supabase, id),
     ]);
 
     setLoading(false);
@@ -262,22 +298,68 @@ export default function CaseDetailScreen() {
     setComments((commentData as CommentRow[] | null) ?? []);
     setUpdates(updateData ?? []);
 
+    const mediaByUpdate = new Map<string, string[]>();
+    for (const media of mediaData ?? []) {
+      if (!media.update_id) continue;
+      const { data: signed } = await getCaseMediaSignedUrl(
+        supabase,
+        media.storage_path,
+        3600,
+      );
+      if (!signed?.signedUrl) continue;
+      const existing = mediaByUpdate.get(media.update_id) ?? [];
+      existing.push(signed.signedUrl);
+      mediaByUpdate.set(media.update_id, existing);
+    }
+    setUpdateMediaUrls(Object.fromEntries(mediaByUpdate));
+
     if (uid) {
       const [
         { data: creator },
         { data: coordinator },
         { data: moderator },
         watching,
+        { data: location },
       ] = await Promise.all([
         supabase.rpc("is_case_creator", { p_case_id: id }),
         supabase.rpc("is_case_coordinator", { p_case_id: id }),
         supabase.rpc("is_moderator_or_admin"),
         isWatchingCase(supabase, uid, id),
+        getCaseExactLocation(supabase, id),
       ]);
       setIsCreator(creator ?? false);
       setIsCoordinator(coordinator ?? false);
       setIsModerator(moderator ?? false);
       setIsWatching(watching.isWatching);
+      setExactLocation(location);
+
+      // Only the creator/coordinator/moderator can ever get a
+      // non-null result from get_responder_phone() - see that
+      // function's own gate - so there is no point asking for
+      // anyone else, or for a response that isn't accepted yet.
+      if (creator || coordinator || moderator) {
+        const accepted = (responseData ?? []).filter(
+          (r) => r.status === "confirmed" || r.status === "completed",
+        );
+        const phoneEntries = await Promise.all(
+          accepted.map(async (r) => {
+            const { data: phone } = await getResponderPhone(supabase, r.id);
+            return [r.id, phone] as [string, string | null];
+          }),
+        );
+        setResponderPhones(
+          Object.fromEntries(
+            phoneEntries.filter(
+              (entry): entry is [string, string] => entry[1] !== null,
+            ),
+          ),
+        );
+      } else {
+        setResponderPhones({});
+      }
+    } else {
+      setExactLocation(null);
+      setResponderPhones({});
     }
 
     const participantIds = [
@@ -422,15 +504,54 @@ export default function CaseDetailScreen() {
     await loadAll();
   }
 
+  async function handleAddUpdatePhoto() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 1,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
+    setProcessingUpdatePhoto(true);
+    try {
+      const processed = await processImageForUpload(result.assets[0].uri);
+      setUpdatePhotos((current) => [...current, processed]);
+    } catch {
+      // Picking/processing failure just leaves the photo list
+      // unchanged - the composer's submit button stays available.
+    } finally {
+      setProcessingUpdatePhoto(false);
+    }
+  }
+
+  function handleRemoveUpdatePhoto(uri: string) {
+    setUpdatePhotos((current) => current.filter((p) => p.uri !== uri));
+  }
+
   async function handleSubmitUpdate() {
     if (!id || !userId || !updateBody.trim()) return;
-    await createCaseUpdate(supabase, userId, {
+    const { data: newUpdate } = await createCaseUpdate(supabase, userId, {
       caseId: id,
       body: updateBody.trim(),
       isPinned: updateIsPinned,
     });
+    if (newUpdate) {
+      for (const photo of updatePhotos) {
+        await uploadCaseMedia(supabase, {
+          caseId: id,
+          uploaderId: userId,
+          mediaId: crypto.randomUUID(),
+          fileExtension: "jpg",
+          contentType: photo.contentType,
+          bytes: photo.bytes,
+          updateId: newUpdate.id,
+        });
+      }
+    }
     setUpdateBody("");
     setUpdateIsPinned(false);
+    setUpdatePhotos([]);
     await loadAll();
   }
 
@@ -468,6 +589,17 @@ export default function CaseDetailScreen() {
 
   async function handleHideReply(replyId: string) {
     await hideReply(supabase, replyId);
+    await loadAll();
+  }
+
+  async function handleSaveEdit(body: string) {
+    if (!editingTarget) return;
+    if (editingTarget.type === "comment") {
+      await editComment(supabase, editingTarget.id, body);
+    } else {
+      await editReply(supabase, editingTarget.id, body);
+    }
+    setEditingTarget(null);
     await loadAll();
   }
 
@@ -533,6 +665,20 @@ export default function CaseDetailScreen() {
 
         <Text variant="bodyMedium">{caseRow.description}</Text>
 
+        {exactLocation ? (
+          <Button
+            variant="outline"
+            onPress={() =>
+              Linking.openURL(
+                buildExternalNavigationUrls(exactLocation, caseRow.title)
+                  .webFallback,
+              )
+            }
+          >
+            {t("view_exact_location_action")}
+          </Button>
+        ) : null}
+
         <Button
           variant={isWatching ? "outline" : "tonal"}
           onPress={handleToggleWatch}
@@ -587,6 +733,8 @@ export default function CaseDetailScreen() {
             availabilityLabel={response.availability_note ?? undefined}
             statusLabel={t(RESPONSE_STATUS_LABEL_KEY[response.status])}
             statusTone={responseStatusTone(response.status)}
+            isAuthorizedViewer={responderPhones[response.id] !== undefined}
+            phoneNumber={responderPhones[response.id]}
             coordinatorActions={
               isCoordinatorLike && response.responder_id !== userId
                 ? [
@@ -663,6 +811,8 @@ export default function CaseDetailScreen() {
             updateType: t("update_type_generic"),
             body: u.body,
             isPinned: u.is_pinned,
+            pinnedLabel: u.is_pinned ? t("update_pinned_label") : undefined,
+            mediaUris: updateMediaUrls[u.id],
           }))}
         />
         {isCoordinatorLike && !isCaseClosed ? (
@@ -677,6 +827,19 @@ export default function CaseDetailScreen() {
               label={t("update_pin_label")}
               checked={updateIsPinned}
               onChange={setUpdateIsPinned}
+            />
+            {processingUpdatePhoto ? (
+              <Text tone="muted">{t("report_photo_processing")}</Text>
+            ) : null}
+            <MediaPicker
+              items={updatePhotos.map((photo): MediaItem => ({
+                id: photo.uri,
+                uri: photo.uri,
+                state: "uploaded",
+              }))}
+              onAdd={handleAddUpdatePhoto}
+              onRetry={() => undefined}
+              onRemove={handleRemoveUpdatePhoto}
             />
             {containsPersonalContactInfo(updateBody) ? (
               <Banner tone="warning" message={t("privacy_warning_message")} />
@@ -700,6 +863,19 @@ export default function CaseDetailScreen() {
               isHidden: c.is_hidden,
               hiddenPlaceholderText: t("comment_hidden_placeholder"),
               actions: [
+                ...(c.author_id === userId
+                  ? [
+                      {
+                        label: t("comment_edit_action"),
+                        onSelect: () =>
+                          setEditingTarget({
+                            type: "comment" as const,
+                            id: c.id,
+                            body: c.body,
+                          }),
+                      },
+                    ]
+                  : []),
                 ...(c.author_id === userId || isModerator
                   ? [
                       {
@@ -724,6 +900,19 @@ export default function CaseDetailScreen() {
               isHidden: r.is_hidden,
               hiddenPlaceholderText: t("comment_hidden_placeholder"),
               actions: [
+                ...(r.author_id === userId
+                  ? [
+                      {
+                        label: t("comment_edit_action"),
+                        onSelect: () =>
+                          setEditingTarget({
+                            type: "reply" as const,
+                            id: r.id,
+                            body: r.body,
+                          }),
+                      },
+                    ]
+                  : []),
                 ...(r.author_id === userId || isModerator
                   ? [
                       {
@@ -847,6 +1036,24 @@ export default function CaseDetailScreen() {
         cancelLabel={t("action_cancel")}
         confirmLabel={t("content_report_submit")}
       />
+
+      {editingTarget ? (
+        <EditTextDialog
+          key={editingTarget.id}
+          visible
+          onRequestClose={() => setEditingTarget(null)}
+          onConfirm={handleSaveEdit}
+          initialValue={editingTarget.body}
+          title={t(
+            editingTarget.type === "comment"
+              ? "comment_edit_title"
+              : "reply_edit_title",
+          )}
+          bodyLabel={t("comment_composer_label")}
+          cancelLabel={t("action_cancel")}
+          confirmLabel={t("action_save")}
+        />
+      ) : null}
     </SafeAreaContainer>
   );
 }

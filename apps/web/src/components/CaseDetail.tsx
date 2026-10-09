@@ -7,6 +7,8 @@ import {
   createReply,
   createCaseUpdate,
   createContentReport,
+  editComment,
+  editReply,
   hideComment,
   hideReply,
   updateResponseStatus,
@@ -21,12 +23,18 @@ import {
   unwatchCase,
   isWatchingCase,
   getProfileNames,
+  getResponderPhone,
+  getCaseExactLocation,
+  listCaseMedia,
+  uploadCaseMedia,
+  getCaseMediaSignedUrl,
 } from "@rescue-alert/api";
 import {
   containsPersonalContactInfo,
   buildMentionToken,
   splitMentionSegments,
 } from "@rescue-alert/validation";
+import { buildExternalNavigationUrls } from "@rescue-alert/maps";
 import {
   translate,
   useLocale,
@@ -34,6 +42,7 @@ import {
 } from "@rescue-alert/localization";
 import type { Database } from "@rescue-alert/types";
 import { createClient } from "../lib/supabase/client";
+import { dataUrlToBlob, processImageForUpload } from "../lib/processImage";
 
 // Never includes `location` - authenticated has no column grant for
 // it (see the rescue_cases select below), and anon has none at all.
@@ -171,12 +180,30 @@ export function CaseDetail({ caseId }: { caseId: string }) {
   const [reportTarget, setReportTarget] = useState<ReportTarget>(null);
   const [reportReason, setReportReason] = useState<string | null>(null);
   const [reportDetails, setReportDetails] = useState("");
+  const [editingTarget, setEditingTarget] = useState<{
+    type: "comment" | "reply";
+    id: string;
+    body: string;
+  } | null>(null);
+  const [editBody, setEditBody] = useState("");
+  const [responderPhones, setResponderPhones] = useState<
+    Record<string, string>
+  >({});
+  const [exactLocation, setExactLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const [composerBody, setComposerBody] = useState("");
   const [composerTarget, setComposerTarget] = useState<ComposerTarget>(null);
 
   const [updateBody, setUpdateBody] = useState("");
   const [updateIsPinned, setUpdateIsPinned] = useState(false);
+  const [updatePhotos, setUpdatePhotos] = useState<string[]>([]);
+  const [processingUpdatePhoto, setProcessingUpdatePhoto] = useState(false);
+  const [updateMediaUrls, setUpdateMediaUrls] = useState<
+    Record<string, string[]>
+  >({});
 
   const isCoordinatorLike = isCreator || isCoordinator || isModerator;
   const isCaseClosed = caseRow ? CLOSED_STATUSES.has(caseRow.status) : false;
@@ -192,6 +219,7 @@ export function CaseDetail({ caseId }: { caseId: string }) {
       { data: needData },
       { data: commentData },
       { data: updateData },
+      { data: mediaData },
     ] = await Promise.all([
       supabase.auth.getUser(),
       // Never select("*") here: rescue_cases.location (the exact
@@ -210,6 +238,7 @@ export function CaseDetail({ caseId }: { caseId: string }) {
       listCaseNeeds(supabase, caseId),
       listCaseComments(supabase, caseId),
       listCaseUpdates(supabase, caseId),
+      listCaseMedia(supabase, caseId),
     ]);
 
     setLoading(false);
@@ -228,22 +257,68 @@ export function CaseDetail({ caseId }: { caseId: string }) {
     setComments((commentData as CommentRow[] | null) ?? []);
     setUpdates(updateData ?? []);
 
+    const mediaByUpdate = new Map<string, string[]>();
+    for (const media of mediaData ?? []) {
+      if (!media.update_id) continue;
+      const { data: signed } = await getCaseMediaSignedUrl(
+        supabase,
+        media.storage_path,
+        3600,
+      );
+      if (!signed?.signedUrl) continue;
+      const existing = mediaByUpdate.get(media.update_id) ?? [];
+      existing.push(signed.signedUrl);
+      mediaByUpdate.set(media.update_id, existing);
+    }
+    setUpdateMediaUrls(Object.fromEntries(mediaByUpdate));
+
     if (uid) {
       const [
         { data: creator },
         { data: coordinator },
         { data: moderator },
         watching,
+        { data: location },
       ] = await Promise.all([
         supabase.rpc("is_case_creator", { p_case_id: caseId }),
         supabase.rpc("is_case_coordinator", { p_case_id: caseId }),
         supabase.rpc("is_moderator_or_admin"),
         isWatchingCase(supabase, uid, caseId),
+        getCaseExactLocation(supabase, caseId),
       ]);
       setIsCreator(creator ?? false);
       setIsCoordinator(coordinator ?? false);
       setIsModerator(moderator ?? false);
       setIsWatching(watching.isWatching);
+      setExactLocation(location);
+
+      // Only the creator/coordinator/moderator can ever get a
+      // non-null result from get_responder_phone() - see that
+      // function's own gate - so there is no point asking for
+      // anyone else, or for a response that isn't accepted yet.
+      if (creator || coordinator || moderator) {
+        const accepted = (responseData ?? []).filter(
+          (r) => r.status === "confirmed" || r.status === "completed",
+        );
+        const phoneEntries = await Promise.all(
+          accepted.map(async (r) => {
+            const { data: phone } = await getResponderPhone(supabase, r.id);
+            return [r.id, phone] as [string, string | null];
+          }),
+        );
+        setResponderPhones(
+          Object.fromEntries(
+            phoneEntries.filter(
+              (entry): entry is [string, string] => entry[1] !== null,
+            ),
+          ),
+        );
+      } else {
+        setResponderPhones({});
+      }
+    } else {
+      setExactLocation(null);
+      setResponderPhones({});
     }
 
     const participantIds = [
@@ -381,15 +456,47 @@ export function CaseDetail({ caseId }: { caseId: string }) {
     await loadAll();
   }
 
+  async function handleUpdatePhotoSelected(file: File) {
+    setProcessingUpdatePhoto(true);
+    try {
+      const processed = await processImageForUpload(file);
+      setUpdatePhotos((current) => [...current, processed.dataUrl]);
+    } catch {
+      // Picking/processing failure just leaves the photo list
+      // unchanged - the composer's submit button stays available.
+    } finally {
+      setProcessingUpdatePhoto(false);
+    }
+  }
+
+  function handleRemoveUpdatePhoto(index: number) {
+    setUpdatePhotos((current) => current.filter((_, i) => i !== index));
+  }
+
   async function handleSubmitUpdate() {
     if (!userId || !updateBody.trim()) return;
-    await createCaseUpdate(supabase, userId, {
+    const { data: newUpdate } = await createCaseUpdate(supabase, userId, {
       caseId,
       body: updateBody.trim(),
       isPinned: updateIsPinned,
     });
+    if (newUpdate) {
+      for (const dataUrl of updatePhotos) {
+        const blob = await dataUrlToBlob(dataUrl);
+        await uploadCaseMedia(supabase, {
+          caseId,
+          uploaderId: userId,
+          mediaId: crypto.randomUUID(),
+          fileExtension: "jpg",
+          contentType: "image/jpeg",
+          bytes: new Uint8Array(await blob.arrayBuffer()),
+          updateId: newUpdate.id,
+        });
+      }
+    }
     setUpdateBody("");
     setUpdateIsPinned(false);
+    setUpdatePhotos([]);
     await loadAll();
   }
 
@@ -398,6 +505,18 @@ export function CaseDetail({ caseId }: { caseId: string }) {
     if (isWatching) await unwatchCase(supabase, userId, caseId);
     else await watchCase(supabase, userId, caseId);
     setIsWatching(!isWatching);
+  }
+
+  async function handleSaveEdit() {
+    if (!editingTarget || !editBody.trim()) return;
+    if (editingTarget.type === "comment") {
+      await editComment(supabase, editingTarget.id, editBody.trim());
+    } else {
+      await editReply(supabase, editingTarget.id, editBody.trim());
+    }
+    setEditingTarget(null);
+    setEditBody("");
+    await loadAll();
   }
 
   async function handleSubmitReport() {
@@ -471,6 +590,20 @@ export function CaseDetail({ caseId }: { caseId: string }) {
 
       <p className="text-text">{caseRow.description}</p>
 
+      {exactLocation ? (
+        <a
+          href={
+            buildExternalNavigationUrls(exactLocation, caseRow.title)
+              .webFallback
+          }
+          target="_blank"
+          rel="noreferrer"
+          className="min-h-11 self-start rounded-full border border-border px-4 py-2 text-text"
+        >
+          {t("view_exact_location_action")}
+        </a>
+      ) : null}
+
       <button
         type="button"
         onClick={handleToggleWatch}
@@ -539,6 +672,9 @@ export function CaseDetail({ caseId }: { caseId: string }) {
             </p>
             {response.availability_note ? (
               <p className="text-text-muted">{response.availability_note}</p>
+            ) : null}
+            {responderPhones[response.id] ? (
+              <p className="text-text">{responderPhones[response.id]}</p>
             ) : null}
             <span className="inline-block rounded-full bg-support-container px-2 py-0.5 text-sm text-support">
               {t(RESPONSE_STATUS_LABEL_KEY[response.status])}
@@ -659,11 +795,24 @@ export function CaseDetail({ caseId }: { caseId: string }) {
               </span>
               {update.is_pinned ? (
                 <span className="text-sm text-on-primary-container">
-                  Pinned
+                  {t("update_pinned_label")}
                 </span>
               ) : null}
             </div>
             <p className="text-on-primary-container">{update.body}</p>
+            {(updateMediaUrls[update.id] ?? []).length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {updateMediaUrls[update.id]?.map((url) => (
+                  // eslint-disable-next-line @next/next/no-img-element -- signed storage URLs, not a remote asset Next's optimizer can handle
+                  <img
+                    key={url}
+                    src={url}
+                    alt=""
+                    className="h-20 w-20 rounded-medium object-cover"
+                  />
+                ))}
+              </div>
+            ) : null}
             <p className="text-sm text-on-primary-container">
               {new Date(update.created_at).toLocaleString(locale)}
             </p>
@@ -686,6 +835,43 @@ export function CaseDetail({ caseId }: { caseId: string }) {
               />
               <span className="text-text">{t("update_pin_label")}</span>
             </label>
+            <label className="min-h-11 self-start rounded-full border border-border px-4 py-2 text-center text-text">
+              {processingUpdatePhoto
+                ? t("report_photo_processing")
+                : t("report_photo_add")}
+              <input
+                type="file"
+                accept="image/*"
+                disabled={processingUpdatePhoto}
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void handleUpdatePhotoSelected(file);
+                  event.target.value = "";
+                }}
+              />
+            </label>
+            {updatePhotos.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {updatePhotos.map((dataUrl, index) => (
+                  <div key={dataUrl.slice(0, 32) + index} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- local data: URLs, not a remote asset Next's optimizer can handle */}
+                    <img
+                      src={dataUrl}
+                      alt=""
+                      className="h-20 w-20 rounded-medium object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveUpdatePhoto(index)}
+                      className="absolute right-0.5 top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-scrim text-on-primary"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <PrivacyWarning
               text={updateBody}
               label={t("privacy_warning_message")}
@@ -753,6 +939,22 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                     {t("comment_reply_label")}
                   </button>
                 ) : null}
+                {comment.author_id === userId ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingTarget({
+                        type: "comment",
+                        id: comment.id,
+                        body: comment.body,
+                      });
+                      setEditBody(comment.body);
+                    }}
+                    className="text-text-muted"
+                  >
+                    {t("comment_edit_action")}
+                  </button>
+                ) : null}
                 {comment.author_id === userId || isModerator ? (
                   <button
                     type="button"
@@ -813,6 +1015,22 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                       </p>
                     )}
                     <div className="mt-1 flex gap-3 text-sm">
+                      {reply.author_id === userId ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingTarget({
+                              type: "reply",
+                              id: reply.id,
+                              body: reply.body,
+                            });
+                            setEditBody(reply.body);
+                          }}
+                          className="text-text-muted"
+                        >
+                          {t("comment_edit_action")}
+                        </button>
+                      ) : null}
                       {reply.author_id === userId || isModerator ? (
                         <button
                           type="button"
@@ -1019,6 +1237,43 @@ export function CaseDetail({ caseId }: { caseId: string }) {
                 className="min-h-10 rounded-full bg-critical px-4 py-2 font-semibold text-on-primary disabled:opacity-50"
               >
                 {t("content_report_submit")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {editingTarget ? (
+        <div className="fixed inset-0 flex items-center justify-center bg-scrim p-6">
+          <div className="w-full max-w-sm rounded-md bg-surface p-6">
+            <h3 className="mb-4 text-lg font-semibold text-text">
+              {t(
+                editingTarget.type === "comment"
+                  ? "comment_edit_title"
+                  : "reply_edit_title",
+              )}
+            </h3>
+            <textarea
+              value={editBody}
+              onChange={(event) => setEditBody(event.target.value)}
+              rows={3}
+              className="mb-4 w-full rounded-md border border-border bg-surface p-3 text-text"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingTarget(null)}
+                className="min-h-10 rounded-full px-4 py-2 text-text"
+              >
+                {t("action_cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={!editBody.trim()}
+                onClick={handleSaveEdit}
+                className="min-h-10 rounded-full bg-primary px-4 py-2 font-semibold text-on-primary disabled:opacity-50"
+              >
+                {t("action_save")}
               </button>
             </div>
           </div>

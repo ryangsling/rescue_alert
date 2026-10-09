@@ -234,6 +234,8 @@ export const en = {
   comment_reply_composer_label: "Write a reply",
   comment_reply_submit: "Post reply",
   comment_edit_action: "Edit",
+  comment_edit_title: "Edit comment",
+  reply_edit_title: "Edit reply",
   comment_hide_action: "Hide",
   comment_report_action: "Report",
   comment_hidden_placeholder: "This content was hidden by a moderator.",
@@ -241,10 +243,12 @@ export const en = {
 
   update_composer_label: "Post an official update",
   update_pin_label: "Pin this update",
+  update_pinned_label: "Pinned",
   update_submit: "Post update",
 
   watch_action: "Watch this case",
   unwatch_action: "Stop watching",
+  view_exact_location_action: "Get directions to exact location",
 
   privacy_warning_message:
     "This looks like it includes a phone number or email address. Consider removing personal contact details before posting.",

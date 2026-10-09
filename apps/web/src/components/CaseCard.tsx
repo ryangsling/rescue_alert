@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getCaseMediaSignedUrl, type FeedCase } from "@rescue-alert/api";
 import { formatApproximateDistance } from "@rescue-alert/maps";
 import {
@@ -84,10 +85,10 @@ export function CaseCard({ feedCase }: { feedCase: FeedCase }) {
       : null;
 
   return (
-    // Not a link: case detail (DESIGN.md 14.4) is Part 12's screen,
-    // not built yet - linking to /cases/[reference] now would be a
-    // dead 404. This card is browsable/filterable, not yet tappable.
-    <div className="flex gap-3 rounded-medium border border-border bg-surface p-4">
+    <Link
+      href={`/case/${feedCase.id}`}
+      className="flex gap-3 rounded-medium border border-border bg-surface p-4"
+    >
       {thumbnailUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- signed Storage URL, not a static asset Next's optimizer can handle
         <img
@@ -114,6 +115,6 @@ export function CaseCard({ feedCase }: { feedCase: FeedCase }) {
         </span>
         <span className="text-xs text-text-muted">{statusLabel}</span>
       </div>
-    </div>
+    </Link>
   );
 }

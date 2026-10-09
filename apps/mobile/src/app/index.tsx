@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import {
   Button,
@@ -123,6 +124,7 @@ function humanizeStatus(status: string): string {
  * from-scratch card, since packages/ui is available here unlike web.
  */
 export default function Home() {
+  const router = useRouter();
   const { locale, setLocale } = useLocale();
   const t = (key: TranslationKey, params?: Record<string, string | number>) =>
     translate(locale, key, params);
@@ -421,6 +423,7 @@ export default function Home() {
                     statusKey ? t(statusKey) : humanizeStatus(feedCase.status)
                   }
                   statusTone={caseStatusTone(feedCase.status)}
+                  onPress={() => router.push(`/case/${feedCase.id}`)}
                 />
               );
             })}

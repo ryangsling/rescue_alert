@@ -36,6 +36,11 @@ create publication supabase_realtime;
 
 grant usage on schema auth, extensions, storage to anon, authenticated, service_role;
 grant execute on function storage.foldername(text) to anon, authenticated, service_role;
+-- Real Supabase projects grant these at the platform level, outside
+-- any migration this repo controls; stand in for that here so RLS on
+-- storage.objects is actually exercised, not vacuously permission-denied.
+grant select, insert, delete on storage.objects to anon, authenticated;
+grant select on storage.buckets to anon, authenticated;
 
 -- Supabase grants new public objects to these roles by name; mimic it so
 -- the migrations' explicit revokes are what actually narrows access.

@@ -477,4 +477,35 @@ export const bn: Record<keyof typeof en, string> = {
   animal_type_label_bn_label: "বাংলা লেবেল",
   animal_type_active_toggle_label: "সক্রিয় (নতুন কেসে নির্বাচনযোগ্য)",
   moderation_animal_type_save_action: "প্রাণীর ধরন সংরক্ষণ করুন",
+
+  public_open_cases_heading: "এখনই সাহায্য প্রয়োজন এমন কেস",
+  public_rescue_history_heading: "আমাদের সম্পন্ন করা উদ্ধারকাজ",
+  public_case_not_found:
+    "এই কেসটি সর্বজনীনভাবে দেখা যাচ্ছে না - এটি বন্ধ, একত্রিত, বা পর্যালোচনাধীন হতে পারে",
+  public_required_assistance_heading: "এখনও প্রয়োজন",
+  public_last_update_heading: "সর্বশেষ অফিসিয়াল আপডেট",
+  public_outcome_heading: "ফলাফল",
+  public_sign_in_to_respond: "এই কেসে সাড়া দিতে সাইন ইন করুন",
+  public_open_in_app_action: "Rescue Alert অ্যাপে খুলুন",
+  public_open_cases_empty: "এই মুহূর্তে কোনো খোলা কেস নেই",
+  public_rescue_history_empty: "এখনও কোনো সম্পন্ন উদ্ধারকাজ নেই",
+  public_directory_link: "যাচাইকৃত ক্লিনিক, আশ্রয়কেন্দ্র, ও সংস্থা দেখুন",
+  public_nav_open_cases: "খোলা কেস",
+  public_nav_history: "উদ্ধার ইতিহাস",
+  public_nav_directory: "ডিরেক্টরি",
+  public_nav_safety: "নিরাপত্তা তথ্য",
+
+  safety_page_heading: "নিরাপত্তা তথ্য",
+  safety_no_guarantee_disclaimer:
+    "Rescue Alert কমিউনিটি সদস্য ও স্বেচ্ছাসেবকদের সংযুক্ত করে - এটি নিশ্চয়তা দেয় না যে কোনো উদ্ধারকাজ চেষ্টা করা হবে বা সফল হবে, এবং এটি কোনো জরুরি সেবা নয়।",
+  safety_bite_heading: "যদি আপনি কামড় বা আঁচড় পান",
+  safety_bite_guidance:
+    "সাবান ও প্রবাহিত পানি দিয়ে কয়েক মিনিট ধরে ক্ষতস্থান ভালোভাবে ধুয়ে নিন, তারপর অবিলম্বে পেশাদার চিকিৎসা সেবা নিন। জলাতঙ্ক প্রাথমিক চিকিৎসায় প্রতিরোধযোগ্য, কিন্তু লক্ষণ শুরু হলে প্রাণঘাতী হতে পারে।",
+  safety_rabies_heading:
+    "আক্রমণাত্মক, বিভ্রান্ত, বা অস্বাভাবিক আচরণকারী প্রাণী",
+  safety_rabies_guidance:
+    "আক্রমণাত্মক, বিভ্রান্ত, অকারণে কামড়ানো, বা অস্বাভাবিক আচরণকারী প্রাণীর কাছে যাবেন না। দূরত্ব বজায় রাখুন, অন্যদের দূরে রাখুন, এবং প্রশিক্ষিত সাড়াদানকারী বা স্থানীয় কর্তৃপক্ষের সাথে যোগাযোগ করুন।",
+  safety_hazard_heading: "অন্যান্য ঝুঁকি",
+  safety_hazard_guidance:
+    "ট্রাফিক, বৈদ্যুতিক লাইন, গভীর পানি, উচ্চতা, এবং ভিড়ের পরিস্থিতি প্রতিটির নিজস্ব সতর্কতা প্রয়োজন - কেস রিপোর্ট করার সময় যেকোনো ঝুঁকি উল্লেখ করুন যাতে সাড়াদানকারীরা প্রস্তুত থাকতে পারেন।",
 };

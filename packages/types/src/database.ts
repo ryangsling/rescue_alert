@@ -1982,6 +1982,10 @@ export type Database = {
         Args: { p_foster_profile_id: string };
         Returns: string;
       };
+      get_public_case_detail: {
+        Args: { p_public_reference: string };
+        Returns: Json;
+      };
       get_responder_phone: { Args: { p_response_id: string }; Returns: string };
       get_user_rescue_history: {
         Args: { p_user_id: string };
@@ -2012,6 +2016,10 @@ export type Database = {
       is_case_visible: { Args: { p_case_id: string }; Returns: boolean };
       is_in_quiet_hours: {
         Args: { p_at?: string; p_end: string; p_start: string };
+        Returns: boolean;
+      };
+      is_media_publicly_visible: {
+        Args: { p_storage_path: string };
         Returns: boolean;
       };
       is_moderator_or_admin: { Args: never; Returns: boolean };
@@ -2062,6 +2070,39 @@ export type Database = {
           upazila_or_thana: string;
           updated_at: string;
           urgency: Database["public"]["Enums"]["urgency_level"];
+        }[];
+      };
+      list_public_open_cases: {
+        Args: { p_limit?: number; p_offset?: number };
+        Returns: {
+          animal_type: string;
+          approximate_location: unknown;
+          district: string;
+          division: string;
+          id: string;
+          incident_type: Database["public"]["Enums"]["incident_type"];
+          last_official_update: string;
+          public_reference: string;
+          reported_at: string;
+          status: Database["public"]["Enums"]["case_status"];
+          title: string;
+          upazila_or_thana: string;
+          updated_at: string;
+          urgency: Database["public"]["Enums"]["urgency_level"];
+        }[];
+      };
+      list_public_rescue_history: {
+        Args: { p_limit?: number; p_offset?: number };
+        Returns: {
+          animal_type: string;
+          closed_at: string;
+          district: string;
+          division: string;
+          final_update: string;
+          incident_type: Database["public"]["Enums"]["incident_type"];
+          outcome: Database["public"]["Enums"]["closure_outcome"];
+          public_reference: string;
+          upazila_or_thana: string;
         }[];
       };
       list_verified_directory: {

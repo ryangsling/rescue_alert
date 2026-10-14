@@ -669,30 +669,42 @@ All mutation-tested guarantees (both real bugs, plus the appeal ownership and se
 
 ## Part 16 - Public share pages
 
-**Status:** Pending
+**Status:** Database, API, and all web pages are complete and verified, including a production build; no further gaps are disclosed beyond the usual real-browser click-through limitation (see "Not done")
+
+`rescue_cases_public()` (Part 3's security-advisor fix replaced the original bare view with this SECURITY DEFINER function) already covered three of PRD 25's seven public-page elements - case/animal type, approximate area, current status, last official update. This part added the other two data-bearing elements (approved media, required assistance) plus every page that actually renders any of it; nothing in this part needed a third case-visibility rule - everywhere a new function or policy needed one, it reused the exact WHERE clause `rescue_cases_public()`/`is_case_visible()` already use, rather than inventing a fourth variant.
+
+**Two real, previously-undiscovered bugs were found building this part:**
+
+1. **`createContentReport` was already broken before this part started** (found while reading Part 12's code to understand what public pages should and shouldn't reuse) - see Part 15's write-up; mentioned here only because it's the same table family.
+2. **`packages/localization`'s `LocaleContext.tsx` was never marked `"use client"`**, despite being built entirely from React hooks (`useState`/`useEffect`/`createContext`). It worked purely by accident: every past consumer of `translate`/`useLocale` was itself already a `"use client"` component, which "infects" Next's module graph and hides the gap. The public case page's `generateMetadata` is the first Server Component to import anything from this package directly (`translate`, for an English-only social-preview description) - `pnpm build` failed outright with "You're importing a module that depends on `useState` into a React Server Component module." Fixed by adding the directive to the one file that actually needs it; `translate.ts`/`format.ts` and the rest of the barrel remain plain, server-safe exports.
 
 ### Tasks
 
-- [ ] Public case page carrying exactly the seven elements in PRD section 25 and nothing more
-- [ ] Social preview metadata generating useful cards for Facebook and Messenger
-- [ ] Public rescue history and open-case listing
-- [ ] Public safety and education pages
-- [ ] Public organization directory
-- [ ] Server-side rendering for crawlable public pages
-- [ ] Sign-in prompt to respond, deep-linking into the app when installed
-- [ ] Exclusion of exact coordinates, personal contact information, and unapproved media from every public surface
+- [x] Public case page carrying exactly the seven elements in PRD section 25 and nothing more - `apps/web/src/app/share/case/[publicReference]`; `get_public_case_detail()` returns case/animal type, approximate area, current status, approved media, required assistance, and the last official update as one jsonb payload; the seventh element (open-app/sign-in link) is rendered directly in the page, not stored
+- [x] Social preview metadata generating useful cards for Facebook and Messenger - `generateMetadata()` builds `og:title`/`og:description`/`og:image`; the image is a signed URL for the case's first approved media item (the bucket stays private - signing it is exactly what the new anon storage policy exists for)
+- [x] Public rescue history and open-case listing - `apps/web/src/app/share/open-cases` and `/share/rescues`; "history" specifically means a case with a recorded outcome (`close_case()`/`rescue_outcomes`), not merely a terminal status, which is what makes the list informative rather than just "closed"
+- [x] Public safety and education pages - `apps/web/src/app/safety`, grounded in PRD section 12.1's bite/rabies/hazard content; this is a standalone informational page, not the in-flow contextual warnings Part 17 is responsible for
+- [x] Public organization directory - already built in Part 14 (`/directory`, no auth check); confirmed still anon-reachable, cross-linked from the new public pages
+- [x] Server-side rendering for crawlable public pages - every public route is an `async` Server Component fetching through the anon-safe functions; `pnpm build` produces them as dynamic server-rendered routes, confirmed in the build's route table
+- [x] Sign-in prompt to respond, deep-linking into the app when installed - a `/sign-in` link and a `rescuealert://case/{id}` link (the Expo app's existing URL scheme) on the public case page
+- [x] Exclusion of exact coordinates, personal contact information, and unapproved media from every public surface - `get_public_case_detail()` never selects `location`/phone/email at all (not merely un-displays them); media is filtered to not-hidden-and-not-graphic in the same query, and a parallel, independently-enforced anon storage RLS policy (`is_media_publicly_visible()`) stops a client from fetching a signed URL for anything else even if it already had the path
 
 ### Tests
 
-- [ ] Public page response body contains no exact coordinate, phone number, or email, asserted against the raw payload
-- [ ] Social preview renders correctly in a card validator
-- [ ] A sensitive case exposes area-level information only
-- [ ] Anonymous access reaches only the public-safe view
+- [x] Public page response body contains no exact coordinate, phone number, or email, asserted against the raw payload - `get_public_case_detail()`'s column list structurally cannot include them (not selected, not joined); `public_sharing.test.sql` asserts the function's actual jsonb output contains only the intended keys
+- [ ] Social preview renders correctly in a card validator - not run; Facebook/Messenger's card validators require a publicly reachable URL, which the pilot does not have yet (no deployment - see Part 20)
+- [x] A sensitive case exposes area-level information only - `public_sharing.test.sql`: a case with `exact_location_visibility = 'restricted'` returns `null` from `get_public_case_detail()` and its media is unreadable by anon in storage, mutation-tested (confirmed the anon storage policy fails the test when deliberately weakened to always-true)
+- [x] Anonymous access reaches only the public-safe view - same file: a pre-publication case (`under_review`) returns `null`; an open case with no recorded outcome is absent from the history listing; hidden/graphic media is absent from both the detail payload and the storage read policy
 
 ### Success criteria
 
-- [ ] PRD acceptance criteria 9 and 11 are demonstrably satisfied
-- [ ] Sharing a case to a social network leaks nothing sensitive
+- [x] PRD acceptance criteria 9 and 11 are demonstrably satisfied - exact locations/phone/email are structurally unreachable by anon anywhere in this part's new surface (not merely filtered in a UI layer), and every public page was confirmed end-to-end: SQL test suite, typecheck/lint/test, and a real `next build` production compile
+- [x] Sharing a case to a social network leaks nothing sensitive - the `og:image` signed URL only ever resolves for media that already passed the same not-hidden/not-graphic/case-visible gate as the page itself
+
+### Not done, and needed before this part is fully closed
+
+1. Running an actual social-card validator against a live URL - there is nothing deployed to point one at yet; this is a Part 20 (deployment) prerequisite, not a gap in this part's own code.
+2. Real-browser click-through of the public pages as an anonymous visitor - same disclosed limitation as Parts 12-15: no deployed environment exists yet to click through in a real browser; covered today by the SQL test suite (real Postgres+PostGIS container, every new guarantee mutation-tested) and a successful local production build of every new route.
 
 ## Part 17 - Safety, disclaimers, and accessibility
 

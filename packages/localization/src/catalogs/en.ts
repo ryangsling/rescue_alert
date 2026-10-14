@@ -483,6 +483,37 @@ export const en = {
   animal_type_label_bn_label: "বাংলা label",
   animal_type_active_toggle_label: "Active (selectable on new cases)",
   moderation_animal_type_save_action: "Save animal type",
+
+  public_open_cases_heading: "Cases that need help right now",
+  public_rescue_history_heading: "Rescues we've completed",
+  public_case_not_found:
+    "This case isn't available to view publicly - it may be closed, merged, or under review",
+  public_required_assistance_heading: "Still needed",
+  public_last_update_heading: "Latest official update",
+  public_outcome_heading: "Outcome",
+  public_sign_in_to_respond: "Sign in to respond to this case",
+  public_open_in_app_action: "Open in the Rescue Alert app",
+  public_open_cases_empty: "No open cases right now",
+  public_rescue_history_empty: "No completed rescues yet",
+  public_directory_link: "Browse verified clinics, shelters, and organizations",
+  public_nav_open_cases: "Open cases",
+  public_nav_history: "Rescue history",
+  public_nav_directory: "Directory",
+  public_nav_safety: "Safety information",
+
+  safety_page_heading: "Safety information",
+  safety_no_guarantee_disclaimer:
+    "Rescue Alert connects community members and volunteers - it does not guarantee that any rescue will be attempted or succeed, and it is not an emergency service.",
+  safety_bite_heading: "If you are bitten or scratched",
+  safety_bite_guidance:
+    "Wash the wound thoroughly with soap and running water for several minutes, then seek professional medical care right away. Rabies is preventable with prompt treatment but can be fatal once symptoms start.",
+  safety_rabies_heading:
+    "Aggressive, disoriented, or unusually behaving animals",
+  safety_rabies_guidance:
+    "Do not approach an animal that is aggressive, disoriented, unprovoked and biting, or behaving unusually. Keep your distance, keep others away, and contact a trained responder or local authority instead.",
+  safety_hazard_heading: "Other hazards",
+  safety_hazard_guidance:
+    "Traffic, electrical lines, deep water, height, and crowd situations each call for their own caution - note any hazard when reporting a case so responders can prepare.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

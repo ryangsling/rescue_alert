@@ -18,7 +18,7 @@ export async function createContentReport(
       target_id: input.targetId,
       reason: input.reason,
       details: input.details,
-      status: "pending",
+      status: "open",
     })
     .select()
     .single();

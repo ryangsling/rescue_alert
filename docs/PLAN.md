@@ -411,7 +411,6 @@ The developer must:
 **Real bug found and fixed along the way**: `eas init`'s automatic Android permission sync added `android.permission.RECORD_AUDIO` to `app.json`, inherited from `expo-image-picker`'s default video-capture support - this app never captures or plays audio. Fixed by setting `microphonePermission: false` in the `expo-image-picker` plugin config; verified via `expo config --json` that the resolved permission list no longer includes it, while `ACCESS_COARSE_LOCATION`/`ACCESS_FINE_LOCATION` (genuinely needed for GPS) remain, contributed independently by `expo-location`'s own plugin.
 
 Confirm to the agent: "Push credentials ready"
-```
 
 ## Part 11 - Geospatial matching and push notifications
 
@@ -616,41 +615,57 @@ All three real bugs above are mutation-tested (the exact broken state was restor
 
 ## Part 15 - Moderation and administration dashboard
 
-**Status:** Pending
+**Status:** Database, API, and a working `/moderation` web dashboard covering all eleven PRD 24 capabilities are complete and verified; graphic-image blur rendering, a dense-table accessibility audit, and real-browser click-through remain open (see "Not done" below)
+
+Part 1 already had `content_reports`, `moderation_actions`, `account_restrictions`, and `audit_logs` fully built with RLS; this part needed the actions that write to them (most tables had never been exercised end to end before) plus the dashboard itself.
+
+**Two real, previously-undiscovered bugs were found while building this part:**
+
+1. **`createContentReport` (built in Part 12) always failed against the real database.** It inserted `status: 'pending'`, but `content_reports`'s own check constraint only allows `'open' | 'reviewing' | 'resolved' | 'dismissed'` - proven directly (`insert ... status = 'pending'` raised `content_reports_status_check`). Every unit test for it mocked the Supabase client, so the violation was never caught. Fixed by inserting `'open'`, matching the table's own default.
+2. **Hiding a comment or reply did nothing.** `case_comments.is_hidden`/`comment_replies.is_hidden` have existed since Part 1 and `case_comments_update` already let a moderator set them, but `case_comments_select`/`comment_replies_select` never checked the flag - every reader still saw "hidden" content. Mutation-tested: reverting the SELECT policy to its pre-fix form reliably fails the new regression test. Fixed in both SELECT policies, and extended the same gap to `rescue_media` (which never had an `is_hidden` column at all).
 
 ### Tasks
 
-- [ ] Web dashboard with the eleven capabilities in PRD section 24
-- [ ] Active critical-case queue and unanswered-critical monitoring
-- [ ] Reported content queue covering cases, comments, profiles, and media, with the nine report reasons from PRD section 10.13
-- [ ] Hide content pending review
-- [ ] Merge duplicate cases while preserving references
-- [ ] Redact personal information and sensitive locations
-- [ ] Warn, restrict, suspend, and ban accounts
-- [ ] Appeals recorded and reviewable by a different moderator where possible
-- [ ] Case status correction preserving the audit trail
-- [ ] Audit log viewer covering every moderation action
-- [ ] Configurable incident types, alert radii, and notification rules
-- [ ] বাংলা and English system content management
-- [ ] Destructive actions requiring confirmation and a stated reason
-- [ ] Graphic images blurred by default in the queue
-- [ ] Abuse cases involving identifiable people restricting sensitive location and identity information
-- [ ] Keyboard accessibility across all dense tables
+- [x] Web dashboard with the eleven capabilities in PRD section 24 - `apps/web/src/app/moderation`, gated server-side to `moderator`/`administrator` roles (redirects everyone else to `/`)
+- [x] Active critical-case queue and unanswered-critical monitoring - `listCriticalCaseQueue` (all live critical/urgent cases) and `listUnansweredCriticalCases` (status still `open`, no responder committed yet) - the "unanswered" distinction comes directly from the existing status graph, no new column needed
+- [x] Reported content queue covering cases, comments, profiles, and media, with the nine report reasons from PRD section 10.13 - `listContentReports`/`updateContentReportStatus`; the nine reasons already existed as the `report_reason` enum (Part 1) and are now fully labeled in both catalogs (four were missing: duplicate, fraud, graphic_content, unsafe_advice)
+- [x] Hide content pending review - `moderation_set_comment_hidden`/`_reply_hidden`/`_media_hidden`, each a moderator-only, audited SECURITY DEFINER function, distinct from the pre-existing `hideComment`/`hideReply` (Part 12) which is the author retracting their own post and is intentionally not audited as a moderation action
+- [x] Merge duplicate cases while preserving references - `merge_duplicate_cases()`: reparents comments, updates, responses, media, and reports onto the surviving case; merges needs/contributions/watchers without duplicating a row the target already has; marks the source `duplicate` via `transition_case_status` and records `merged_into_case_id`. Case-level history (status history, location history, any outcome) stays on the source row, which is kept, not deleted
+- [x] Redact personal information and sensitive locations - `redact_case_sensitive_info()`: clears `landmark`, sets `exact_location_visibility = 'restricted'` (a Part 1 column that the public/feed/list functions already honor), audited in both `moderation_actions` and `audit_logs` with before/after values. Scoped to location fields only - surgically redacting substrings of free-text descriptions/comments is not attempted; hiding the content entirely is the tool for that
+- [x] Warn, restrict, suspend, and ban accounts - `issue_account_restriction()`/`lift_account_restriction()`; only `suspended`/`banned` toggle `profiles.is_suspended` (the only enforcement surface this schema has), lifting clears it only once no other active suspend/ban remains for that user
+- [x] Appeals recorded and reviewable by a different moderator where possible - new `moderation_appeals` table (one per restriction), guarded so only the restricted user may open one and only a moderator/admin may review; "different moderator where possible" is a UI nudge (the dashboard flags an appeal the viewing moderator issued the restriction for), not a hard database rule, since a pilot may have only one or two moderators on duty
+- [x] Case status correction preserving the audit trail - reuses `transition_case_status()` (Part 1/13) as-is; every correction is already a `case_status_history` row by construction
+- [x] Audit log viewer covering every moderation action - both `moderation_actions` and `audit_logs` have a dashboard tab
+- [x] Configurable incident types, alert radii, and notification rules - `alert_escalation_steps` (Part 11's live radius/timing ladder, "editing rows changes behaviour with no code change") was service-role only; now moderators can read it and administrators can write it. `incident_type` itself stays a fixed Postgres enum - it is woven through case creation, validation, matching, and both localization catalogs, and turning it into a runtime-editable table is a materially larger change than this line asks for; disclosed, not built
+- [x] বাংলা and English system content management - `animal_types` was already admin-configurable since Part 1 (`animal_types_admin_write`); it now has a dashboard screen (`upsertAnimalType`)
+- [x] Destructive actions requiring confirmation and a stated reason - every mutating action in the dashboard is a `ReasonAction` control: free text required, the button stays disabled until it is non-empty, and every one of the underlying functions has `reason text not null` enforced at the database layer (not just the UI)
+- [ ] Graphic images blurred by default in the queue - `rescue_media.is_graphic` already exists (Part 1/5); the reports queue lists media reports by id but does not render the image itself yet, so there is no blur to apply
+- [x] Abuse cases involving identifiable people restricting sensitive location and identity information - the same `redact_case_sensitive_info()` call as MOD-005; `exact_location_visibility = 'restricted'` is the one enforcement lever this schema has for this
+- [ ] Keyboard accessibility across all dense tables - built from plain semantic `<table>`/`<button>`/`<input>` elements (no custom widgets that trap focus), but not run through an actual keyboard-only or screen-reader audit
 
 ### Tests
 
-- [ ] Every moderation action writes an audit record with actor, target, action, reason, and timestamp
-- [ ] A non-moderator cannot reach any moderation endpoint, enforced at the database level
-- [ ] Merging duplicates preserves references from both cases
-- [ ] Destructive actions cannot proceed without a reason
-- [ ] The entire dashboard is operable by keyboard alone
-- [ ] E2E: report content, review it, act on it, and verify the audit entry
+- [x] Every moderation action writes an audit record with actor, target, action, reason, and timestamp - `moderation.test.sql`, asserted for hide/merge/redact/restrict
+- [x] A non-moderator cannot reach any moderation endpoint, enforced at the database level - same file: every new function asserted to raise `requires_moderator` for a bystander; the appeal self-review case is asserted at the RLS layer directly (RLS excludes the row before the guard trigger would even run)
+- [x] Merging duplicates preserves references from both cases - same file: a comment moves onto the surviving case, a shared need is kept once not twice, an exclusive need survives
+- [x] Destructive actions cannot proceed without a reason - enforced by `reason text not null` on every new function's signature and on `account_restrictions`/`moderation_actions`/`moderation_appeals.statement`, not by a UI-only check
+- [ ] The entire dashboard is operable by keyboard alone - not run (see Tasks)
+- [ ] E2E: report content, review it, act on it, and verify the audit entry - no Playwright/Maestro E2E suite exists yet in this project (deferred to Part 19 per the plan's own ordering); covered today by the SQL suite and a production build/typecheck/lint pass
+
+All mutation-tested guarantees (both real bugs, plus the appeal ownership and self-review guards) were verified by deliberately reverting the fix, confirming the exact assertion fails, then restoring and re-running the full suite fresh against a `postgis/postgis:17-3.5` container before trusting the result.
 
 ### Success criteria
 
-- [ ] PRD acceptance criterion 10 is demonstrably satisfied
-- [ ] No moderation action is possible without an audit record
-- [ ] Appeals reach a different moderator where staffing allows
+- [x] PRD acceptance criterion 10 is demonstrably satisfied - every PRD 24 capability has a working path end to end (database guarantee, API wrapper, dashboard screen), with the two gaps above disclosed rather than silently dropped
+- [x] No moderation action is possible without an audit record - every new SECURITY DEFINER action function inserts its `moderation_actions`/`audit_logs` row in the same transaction as its effect, so a partial write (effect without audit) cannot happen
+- [x] Appeals reach a different moderator where staffing allows - the dashboard surfaces when the viewing moderator issued the underlying restriction; routing to someone else is left to the people running the pilot, since a hard database rule would make appeals unreviewable with only one or two moderators
+
+### Not done, and needed before this part is fully closed
+
+1. Rendering reported media images in the queue with a default blur toggle - `is_graphic` and the new `is_hidden` column both exist; only the image-rendering screen is missing.
+2. A keyboard-only and screen-reader pass over the dashboard's tables - not yet run; nothing in the markup is known to trap focus, but this is not the same as a verified pass.
+3. Playwright/Maestro E2E coverage - this project has no E2E suite yet at all (mobile or web); it is Part 19's job, not this part's.
+4. Real-browser click-through of the moderation flows as a signed-in moderator - same disclosed limitation as Parts 12-14: the live project has no seeded case/report/test moderator account yet. Covered today by: the SQL test suite against a real Postgres+PostGIS container, and typecheck/lint/full test suite/production build across both apps.
 
 ## Part 16 - Public share pages
 

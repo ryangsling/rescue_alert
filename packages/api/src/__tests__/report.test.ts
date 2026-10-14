@@ -4,7 +4,7 @@ import type { Database } from "@rescue-alert/types";
 import { createContentReport } from "../report";
 
 describe("createContentReport", () => {
-  it("inserts with the caller as reporter_id and status pending", async () => {
+  it("inserts with the caller as reporter_id and status open", async () => {
     const single = vi.fn().mockResolvedValue({ data: {}, error: null });
     const select = vi.fn(() => ({ single }));
     const insert = vi.fn(() => ({ select }));
@@ -24,7 +24,7 @@ describe("createContentReport", () => {
       target_id: "reply-1",
       reason: "harassment",
       details: undefined,
-      status: "pending",
+      status: "open",
     });
   });
 });

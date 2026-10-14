@@ -827,6 +827,64 @@ export type Database = {
           },
         ];
       };
+      moderation_appeals: {
+        Row: {
+          appellant_id: string;
+          created_at: string;
+          decision_reason: string | null;
+          id: string;
+          restriction_id: string;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          statement: string;
+          status: string;
+        };
+        Insert: {
+          appellant_id: string;
+          created_at?: string;
+          decision_reason?: string | null;
+          id?: string;
+          restriction_id: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          statement: string;
+          status?: string;
+        };
+        Update: {
+          appellant_id?: string;
+          created_at?: string;
+          decision_reason?: string | null;
+          id?: string;
+          restriction_id?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          statement?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "moderation_appeals_appellant_id_fkey";
+            columns: ["appellant_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "moderation_appeals_restriction_id_fkey";
+            columns: ["restriction_id"];
+            isOneToOne: true;
+            referencedRelation: "account_restrictions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "moderation_appeals_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notification_deliveries: {
         Row: {
           attempted_at: string | null;
@@ -1261,6 +1319,7 @@ export type Database = {
           landmark: string | null;
           last_seen_at: string | null;
           location: unknown;
+          merged_into_case_id: string | null;
           organization_id: string | null;
           public_reference: string;
           reported_at: string;
@@ -1289,6 +1348,7 @@ export type Database = {
           landmark?: string | null;
           last_seen_at?: string | null;
           location?: unknown;
+          merged_into_case_id?: string | null;
           organization_id?: string | null;
           public_reference?: string;
           reported_at?: string;
@@ -1317,6 +1377,7 @@ export type Database = {
           landmark?: string | null;
           last_seen_at?: string | null;
           location?: unknown;
+          merged_into_case_id?: string | null;
           organization_id?: string | null;
           public_reference?: string;
           reported_at?: string;
@@ -1349,6 +1410,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "rescue_cases_merged_into_case_id_fkey";
+            columns: ["merged_into_case_id"];
+            isOneToOne: false;
+            referencedRelation: "rescue_cases";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "rescue_cases_organization_id_fkey";
             columns: ["organization_id"];
             isOneToOne: false;
@@ -1365,6 +1433,7 @@ export type Database = {
           exif_stripped: boolean;
           id: string;
           is_graphic: boolean;
+          is_hidden: boolean;
           storage_path: string;
           update_id: string | null;
           uploader_id: string;
@@ -1376,6 +1445,7 @@ export type Database = {
           exif_stripped?: boolean;
           id?: string;
           is_graphic?: boolean;
+          is_hidden?: boolean;
           storage_path: string;
           update_id?: string | null;
           uploader_id: string;
@@ -1387,6 +1457,7 @@ export type Database = {
           exif_stripped?: boolean;
           id?: string;
           is_graphic?: boolean;
+          is_hidden?: boolean;
           storage_path?: string;
           update_id?: string | null;
           uploader_id?: string;
@@ -1825,6 +1896,7 @@ export type Database = {
           landmark: string | null;
           last_seen_at: string | null;
           location: unknown;
+          merged_into_case_id: string | null;
           organization_id: string | null;
           public_reference: string;
           reported_at: string;
@@ -1945,6 +2017,18 @@ export type Database = {
       is_moderator_or_admin: { Args: never; Returns: boolean };
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean };
       is_org_member: { Args: { p_org_id: string }; Returns: boolean };
+      issue_account_restriction: {
+        Args: {
+          p_reason: string;
+          p_restriction_type: Database["public"]["Enums"]["account_restriction_type"];
+          p_user_id: string;
+        };
+        Returns: string;
+      };
+      lift_account_restriction: {
+        Args: { p_reason: string; p_restriction_id: string };
+        Returns: undefined;
+      };
       list_feed_cases: {
         Args: {
           p_animal_type_ids?: string[];
@@ -1999,6 +2083,26 @@ export type Database = {
           shelter_capacity_total: number;
         }[];
       };
+      merge_duplicate_cases: {
+        Args: {
+          p_reason: string;
+          p_source_case_id: string;
+          p_target_case_id: string;
+        };
+        Returns: undefined;
+      };
+      moderation_set_comment_hidden: {
+        Args: { p_comment_id: string; p_hidden: boolean; p_reason: string };
+        Returns: undefined;
+      };
+      moderation_set_media_hidden: {
+        Args: { p_hidden: boolean; p_media_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      moderation_set_reply_hidden: {
+        Args: { p_hidden: boolean; p_reason: string; p_reply_id: string };
+        Returns: undefined;
+      };
       notification_case_payload: { Args: { p_case_id: string }; Returns: Json };
       organization_member_count: {
         Args: { p_org_id: string };
@@ -2010,6 +2114,10 @@ export type Database = {
         Returns: undefined;
       };
       record_receipt_results: { Args: { p_results: Json }; Returns: undefined };
+      redact_case_sensitive_info: {
+        Args: { p_case_id: string; p_reason: string };
+        Returns: undefined;
+      };
       register_device: {
         Args: { p_expo_push_token: string; p_platform: string };
         Returns: string;
@@ -2059,6 +2167,7 @@ export type Database = {
           landmark: string | null;
           last_seen_at: string | null;
           location: unknown;
+          merged_into_case_id: string | null;
           organization_id: string | null;
           public_reference: string;
           reported_at: string;
@@ -2173,7 +2282,8 @@ export type Database = {
         | "ban_account"
         | "reopen_case"
         | "correct_status"
-        | "other";
+        | "other"
+        | "lift_restriction";
       notification_category:
         | "new_critical_case_nearby"
         | "new_urgent_case_nearby"
@@ -2456,6 +2566,7 @@ export const Constants = {
         "reopen_case",
         "correct_status",
         "other",
+        "lift_restriction",
       ],
       notification_category: [
         "new_critical_case_nearby",

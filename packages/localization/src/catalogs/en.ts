@@ -275,7 +275,11 @@ export const en = {
 
   report_reason_harassment: "Harassment",
   report_reason_spam: "Spam",
+  report_reason_duplicate: "Duplicate",
+  report_reason_fraud: "Fraud",
   report_reason_cruelty: "Cruelty",
+  report_reason_graphic_content: "Graphic content",
+  report_reason_unsafe_advice: "Unsafe advice",
   report_reason_privacy_exposure: "Privacy exposure",
   report_reason_other: "Other",
 
@@ -394,6 +398,91 @@ export const en = {
   placement_request_status_withdrawn: "Withdrawn",
   placement_request_action: "Request this foster",
   placement_request_sent: "Placement request sent",
+
+  moderation_dashboard_heading: "Moderation",
+  moderation_nav_queue: "Critical queue",
+  moderation_nav_reports: "Reports",
+  moderation_nav_restrictions: "Accounts",
+  moderation_nav_appeals: "Appeals",
+  moderation_nav_audit_log: "Audit log",
+  moderation_nav_settings: "Configuration",
+
+  moderation_critical_queue_heading: "Active critical and urgent cases",
+  moderation_unanswered_only_toggle: "Unanswered only",
+  moderation_queue_empty: "Nothing in the queue right now",
+  moderation_reason_required_label:
+    "Reason (required, kept with the audit record)",
+  moderation_confirm_action: "Confirm",
+  moderation_cancel_action: "Cancel",
+
+  moderation_reports_heading: "Reported content",
+  content_report_status_open: "Open",
+  content_report_status_reviewing: "Reviewing",
+  content_report_status_resolved: "Resolved",
+  content_report_status_dismissed: "Dismissed",
+  moderation_report_target_case: "Case",
+  moderation_report_target_comment: "Comment",
+  moderation_report_target_reply: "Reply",
+  moderation_report_target_profile: "Profile",
+  moderation_report_target_media: "Media",
+  moderation_mark_reviewing_action: "Mark reviewing",
+  moderation_resolve_action: "Resolve",
+  moderation_dismiss_action: "Dismiss",
+  moderation_hide_action: "Hide",
+  moderation_unhide_action: "Unhide",
+
+  moderation_merge_heading: "Merge duplicate case",
+  moderation_merge_source_label: "Duplicate case (will be marked duplicate)",
+  moderation_merge_target_label: "Surviving case",
+  moderation_merge_action: "Merge",
+
+  moderation_redact_heading: "Redact sensitive information",
+  moderation_redact_action: "Redact landmark and restrict exact location",
+
+  moderation_status_correction_heading: "Correct case status",
+  moderation_status_correction_action: "Apply correction",
+
+  moderation_restrictions_heading: "Account restrictions",
+  account_restriction_type_warning: "Warning",
+  account_restriction_type_restricted: "Restricted",
+  account_restriction_type_suspended: "Suspended",
+  account_restriction_type_banned: "Banned",
+  moderation_issue_restriction_action: "Issue restriction",
+  moderation_lift_restriction_action: "Lift restriction",
+  moderation_restriction_active_label: "Active",
+  moderation_restriction_lifted_label: "Lifted",
+
+  moderation_appeals_heading: "Appeals",
+  appeal_status_pending: "Pending",
+  appeal_status_upheld: "Upheld",
+  appeal_status_overturned: "Overturned",
+  moderation_appeal_submit_action: "Submit appeal",
+  moderation_appeal_statement_label:
+    "Why should this restriction be lifted or reduced?",
+  moderation_appeal_review_own_notice:
+    "You issued this restriction - routing to another moderator is preferred where possible",
+  moderation_appeal_uphold_action: "Uphold",
+  moderation_appeal_overturn_action: "Overturn",
+  moderation_appeal_decision_reason_label: "Decision notes (optional)",
+
+  moderation_audit_log_heading: "Audit log",
+  moderation_actions_tab: "Moderation actions",
+  audit_logs_tab: "System changes",
+
+  moderation_settings_heading: "Configuration",
+  moderation_escalation_steps_heading: "Alert radii and timing",
+  escalation_step_urgency_label: "Urgency",
+  escalation_step_number_label: "Step",
+  escalation_step_radius_label: "Radius (km)",
+  escalation_step_after_minutes_label: "Starts after (minutes)",
+  moderation_escalation_save_action: "Save step",
+  moderation_escalation_delete_action: "Remove step",
+  moderation_animal_types_heading: "Animal types",
+  animal_type_slug_label: "Slug",
+  animal_type_label_en_label: "English label",
+  animal_type_label_bn_label: "বাংলা label",
+  animal_type_active_toggle_label: "Active (selectable on new cases)",
+  moderation_animal_type_save_action: "Save animal type",
 } as const;
 
 export type TranslationKey = keyof typeof en;

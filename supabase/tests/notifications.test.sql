@@ -263,8 +263,10 @@ end $$;
 
 -- 8. Access control.
 do $$
-declare v_j uuid := pg_temp.uid('j_ok_7km');
+declare v_j uuid := pg_temp.uid('j_ok_7km'); v_mod uuid := pg_temp.mk_user('escalation_mod');
 begin
+  update profiles set role = 'moderator' where id = v_mod;
+
   perform set_config('request.jwt.claim.sub', v_j::text, true);
   set local role authenticated;
   assert (select count(*) from notifications where recipient_id <> v_j) = 0,
@@ -279,11 +281,20 @@ begin
     assert false, 'clients must not read deliveries';
   exception when insufficient_privilege then null;
   end;
-  begin
-    perform count(*) from alert_escalation_steps;
-    assert false, 'clients must not read escalation config';
-  exception when insufficient_privilege then null;
-  end;
+  -- Part 15: moderators/administrators may read the escalation ladder
+  -- (PRD 24 "configurable alert radii"); an ordinary user still reads
+  -- zero rows via RLS, same effective guarantee as before.
+  assert (select count(*) from alert_escalation_steps) = 0,
+    'a non-moderator must not read escalation config';
+  reset role;
+
+  perform set_config('request.jwt.claim.sub', v_mod::text, true);
+  set local role authenticated;
+  assert (select count(*) from alert_escalation_steps) > 0,
+    'a moderator may read escalation config';
+  update alert_escalation_steps set radius_km = 999 where urgency = 'critical' and step = 1;
+  assert (select count(*) from alert_escalation_steps where radius_km = 999) = 0,
+    'a plain moderator must not write escalation config';
   reset role;
 
   assert not has_function_privilege('authenticated', 'find_alert_candidates(uuid,numeric)', 'execute');

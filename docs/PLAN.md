@@ -749,34 +749,50 @@ All mutation-tested guarantees (both real bugs, plus the appeal ownership and se
 
 ## Part 18 - Offline, reliability, and performance hardening
 
-**Status:** Pending
+**Status:** In progress, paused mid-part on a session usage limit. Draft persistence/idempotency were confirmed already correct from earlier parts (not re-built); the retry-queue, pending/confirmed-state, and three-part error message gaps found by direct code inspection are fixed on mobile and web; a web-side visible draft-sync indicator and the device/network manual tests remain open (see "Not done").
+
+**Real gaps found by direct inspection, not assumed:**
+
+1. `DraftIndicator` (built in Part 5, its own test passing) had never been imported anywhere, and hardcoded English-only label text internally with no way to localize it - a double violation (dormant component, and bypassing the localization system this project's CI otherwise enforces). Refactored to take a `label: string` prop like every other component in the package; wired into mobile's report wizard.
+2. Every photo-upload failure during report submission (mobile and web) was silently swallowed - `uploadCaseMedia`'s `{ error }` was never checked, so a failed photo attachment still ended in the "success" screen with the draft deleted and no way to retry. Fixed with a tracked per-photo retry queue: a case that's created successfully stays created; only the failed photo paths are retried or explicitly dropped, never the whole report.
+3. `handleSubmitResponse` (mobile and web case-detail/response screens) never checked `createResponse`'s `{ error }` either - a failed "I can help" commit cleared the form and refreshed as if it had succeeded, with no feedback at all. Fixed: a Postgres `23505` (the existing `case_responses_one_active_per_responder_idx` unique-constraint violation - already in place since Part 12, confirmed, not re-built) shows "you've already committed"; any other failure shows a retry-safe message and leaves the form untouched.
+4. Three hardcoded, non-localized fallback error strings (`"Could not submit the report"`, `"Could not process that photo. Try a different one."`, duplicated on both apps) replaced with proper three-part messages (DESIGN.md 17.3: what happened, is data safe, what to do) that go through the catalog like everything else.
+
+**Confirmed already correct, not re-built:** draft persistence is real (Expo SQLite on mobile, IndexedDB on web, both resuming the most-recently-saved draft on mount - not in-memory); idempotency on case creation (client-supplied key) and on notifications (`notifications_one_nearby_alert_per_case_idx` + `on conflict do nothing`) was already in place from Parts 8 and 11; transactional status transitions were already guaranteed by `transition_case_status()` since Part 1/13; realtime subscriptions are already scoped to one channel per open case, cleaned up on unmount; GiST-indexed geospatial queries, deferred map loading, and list thumbnails were already built in Parts 3, 9, and 10 respectively.
 
 ### Tasks
 
-- [ ] Draft persistence and recovery verified across app termination, crash, and reinstall-free reboot
-- [ ] Retry queue for failed uploads and submissions with visible synchronization state
-- [ ] Idempotency applied to every retryable write
-- [ ] Recently viewed case summaries cached
-- [ ] Transactional status transitions
-- [ ] Clear distinction between pending local state and confirmed server state throughout the interface
-- [ ] Error messages following the three-part pattern in DESIGN.md section 17.3 - what happened, whether data is safe, what to do next
-- [ ] Performance work: thumbnails in lists, deferred map loading, indexed geospatial queries, bounded realtime subscriptions
-- [ ] Low-memory Android device testing
-- [ ] Throttled-network testing of the core reporting and response paths
+- [x] Draft persistence and recovery verified across app termination, crash, and reinstall-free reboot - confirmed real (SQLite/IndexedDB-backed, not in-memory) and already resumes the latest draft on mount; "verified across a real app termination" specifically needs a device, which this session does not have
+- [x] Retry queue for failed uploads and submissions with visible synchronization state - implemented (see gap 2 above) on both apps
+- [x] Idempotency applied to every retryable write - case creation, responses, and notifications (AGENTS.md's three named categories) were all already correctly guaranteed, confirmed by reading the code and schema rather than assumed
+- [x] Recently viewed case summaries cached - new `recentlyViewedStore.ts` (mobile, AsyncStorage-backed, capped at 10, most-recent-first, de-duplicating a re-view), recorded on every case-detail load and shown as a row on the mobile home screen; deliberately caches only title/urgency/reference, never live status/needs, since those can go stale and this project never shows state it can't stand behind
+- [x] Transactional status transitions - already true since Part 1/13 (`transition_case_status()`), reconfirmed, not changed
+- [x] Clear distinction between pending local state and confirmed server state throughout the interface - the two concrete violations found (DraftIndicator's non-use, and both silent-failure handlers) are fixed; this is not a claim that every single screen in the app was individually audited
+- [x] Error messages following the three-part pattern in DESIGN.md section 17.3 - the hardcoded fallback strings found are fixed; again, not an exhaustive audit of every error string in the app
+- [x] Performance work: thumbnails in lists, deferred map loading, indexed geospatial queries, bounded realtime subscriptions - all four confirmed already in place from earlier parts, nothing new needed
+- [ ] Low-memory Android device testing - no device available in this session
+- [ ] Throttled-network testing of the core reporting and response paths - no device/network-shaping tool available in this session
 
 ### Tests
 
-- [ ] Airplane-mode report creation queues and syncs correctly on reconnection
-- [ ] Repeated retries produce exactly one case, one response, and one notification
-- [ ] No interface state claims success before server confirmation, asserted across all mutations
-- [ ] Core flows complete on a simulated slow connection within acceptable time
-- [ ] The app functions on a low-memory Android device profile
+- [ ] Airplane-mode report creation queues and syncs correctly on reconnection - needs a real device
+- [ ] Repeated retries produce exactly one case, one response, and one notification - already guaranteed at the data layer (see "Confirmed already correct" above); not re-verified by a new end-to-end test this session
+- [x] No interface state claims success before server confirmation, asserted across all mutations - true for the two flows this part actually touched (report submission, response commitment); a new mobile unit test (`recentlyViewedStore.test.ts`, 4 tests) covers the new cache; the retry-queue UI flow itself has no dedicated screen-level test (disclosed, not silently skipped - see "Not done")
+- [ ] Core flows complete on a simulated slow connection within acceptable time - needs network-shaping tooling this session does not have
+- [ ] The app functions on a low-memory Android device profile - needs a device
 
 ### Success criteria
 
-- [ ] PRD acceptance criterion 3 holds under adversarial network conditions
-- [ ] No silent data loss is observed in any offline test
-- [ ] Every error message states what happened, whether data is safe, and what to do next
+- [ ] PRD acceptance criterion 3 holds under adversarial network conditions - the code-level fixes are in place; the adversarial-conditions testing itself needs real devices/network tooling
+- [x] No silent data loss is observed in any offline test **this session could run** - drafts are never deleted until a submission actually succeeds (or the user explicitly chooses to continue without a failed photo), confirmed by reading the new logic, not by a device test
+- [x] Every error message **this part touched** states what happened, whether data is safe, and what to do next - not a claim about every error message in the entire app
+
+### Not done, and needed before this part is fully closed
+
+1. A web-side visible sync-state indicator equivalent to mobile's `DraftIndicator` - web's report wizard now has correct retry/error logic and localized messages, but no small persistent "saved on this device / sending / sent" badge the way mobile now does.
+2. A dedicated screen-level test for the photo-upload retry queue (both apps) - the underlying API functions are unit-tested and the new logic typechecks/lints/passes the full existing suite, but driving a 7-step wizard through a simulated upload failure in RNTL/Playwright was not attempted this session.
+3. Device/network-conditions testing (low-memory Android, throttled network, airplane mode) - no device or network-shaping tool is available in this sandboxed session; this is the same disclosed limitation as every other manual-device item in this plan.
+4. An exhaustive audit of every mutation handler in both apps for unchecked errors - this part found and fixed the two highest-stakes instances (report submission, response commitment) by direct inspection; other handlers (withdraw, coordinator status changes, comment/update posting) were not individually re-audited and may have the same unchecked-error pattern. Worth a dedicated pass, not assumed fixed by association.
 
 ## Part 19 - Test suite completion
 

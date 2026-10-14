@@ -180,6 +180,7 @@ export function CaseDetail({ caseId }: { caseId: string }) {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [responseError, setResponseError] = useState<string | null>(null);
 
   const [assistanceSelected, setAssistanceSelected] = useState<
     Set<AssistanceType>
@@ -422,11 +423,24 @@ export function CaseDetail({ caseId }: { caseId: string }) {
 
   async function handleSubmitResponse() {
     if (!userId || assistanceSelected.size === 0) return;
-    await createResponse(supabase, userId, {
-      caseId,
-      assistanceTypes: [...assistanceSelected],
-      availabilityNote: availabilityNote || undefined,
-    });
+    setResponseError(null);
+    const { error: responseSubmitError } = await createResponse(
+      supabase,
+      userId,
+      {
+        caseId,
+        assistanceTypes: [...assistanceSelected],
+        availabilityNote: availabilityNote || undefined,
+      },
+    );
+    if (responseSubmitError) {
+      setResponseError(
+        responseSubmitError.code === "23505"
+          ? t("response_already_committed_error")
+          : t("response_submit_error"),
+      );
+      return;
+    }
     setAssistanceSelected(new Set());
     setAvailabilityNote("");
     await loadAll();
@@ -722,6 +736,11 @@ export function CaseDetail({ caseId }: { caseId: string }) {
           <p className="text-sm text-text-muted">
             {t("disclaimer_no_ownership")}
           </p>
+          {responseError && (
+            <p role="alert" className="text-critical">
+              {responseError}
+            </p>
+          )}
           <button
             type="button"
             disabled={assistanceSelected.size === 0}

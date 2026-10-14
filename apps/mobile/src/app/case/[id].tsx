@@ -69,6 +69,7 @@ import {
 } from "@rescue-alert/localization";
 import type { Database } from "@rescue-alert/types";
 import { supabase } from "../../supabase-client";
+import { recordCaseView } from "../../recentlyViewedStore";
 import {
   processImageForUpload,
   type ProcessedImage,
@@ -221,6 +222,7 @@ export default function CaseDetailScreen() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [responseError, setResponseError] = useState<string | null>(null);
 
   const [assistanceSelected, setAssistanceSelected] = useState<
     Set<AssistanceType>
@@ -305,6 +307,13 @@ export default function CaseDetailScreen() {
     }
     setCaseRow(caseData ?? null);
     if (!caseData) return;
+
+    void recordCaseView({
+      id: caseData.id,
+      publicReference: caseData.public_reference,
+      title: caseData.title,
+      urgency: caseData.urgency,
+    });
 
     const uid = user.user?.id ?? null;
     setUserId(uid);
@@ -473,11 +482,24 @@ export default function CaseDetailScreen() {
 
   async function handleSubmitResponse() {
     if (!id || !userId || assistanceSelected.size === 0) return;
-    await createResponse(supabase, userId, {
-      caseId: id,
-      assistanceTypes: [...assistanceSelected],
-      availabilityNote: availabilityNote || undefined,
-    });
+    setResponseError(null);
+    const { error: responseSubmitError } = await createResponse(
+      supabase,
+      userId,
+      {
+        caseId: id,
+        assistanceTypes: [...assistanceSelected],
+        availabilityNote: availabilityNote || undefined,
+      },
+    );
+    if (responseSubmitError) {
+      setResponseError(
+        responseSubmitError.code === "23505"
+          ? t("response_already_committed_error")
+          : t("response_submit_error"),
+      );
+      return;
+    }
     setAssistanceSelected(new Set());
     setAvailabilityNote("");
     await loadAll();
@@ -782,6 +804,11 @@ export default function CaseDetailScreen() {
             <Text variant="caption" tone="muted">
               {t("disclaimer_no_ownership")}
             </Text>
+            {responseError && (
+              <Text accessibilityRole="alert" className="text-critical">
+                {responseError}
+              </Text>
+            )}
             <Button
               disabled={assistanceSelected.size === 0}
               onPress={handleSubmitResponse}

@@ -26,6 +26,10 @@ import {
 import type { Database } from "@rescue-alert/types";
 import { supabase } from "../supabase-client";
 import { LocationMap } from "../components/LocationMap";
+import {
+  listRecentlyViewedCases,
+  type RecentlyViewedCase,
+} from "../recentlyViewedStore";
 
 type AnimalType = {
   id: string;
@@ -150,6 +154,15 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<"list" | "map">("list");
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedCase[]>(
+    [],
+  );
+
+  useEffect(() => {
+    void Promise.resolve()
+      .then(() => listRecentlyViewedCases())
+      .then((cases) => setRecentlyViewed(cases));
+  }, []);
 
   useEffect(() => {
     async function loadAnimalTypes() {
@@ -314,6 +327,25 @@ export default function Home() {
             {locale === "en" ? "বাংলা" : "English"}
           </Button>
         </Stack>
+
+        {recentlyViewed.length > 0 && (
+          <Stack gap="1">
+            <Text variant="titleMedium">
+              {t("feed_recently_viewed_heading")}
+            </Text>
+            <Stack direction="row" gap="2">
+              {recentlyViewed.map((c) => (
+                <Button
+                  key={c.id}
+                  variant="outline"
+                  onPress={() => router.push(`/case/${c.id}`)}
+                >
+                  {c.title}
+                </Button>
+              ))}
+            </Stack>
+          </Stack>
+        )}
 
         <TextField
           label={t("feed_search_placeholder")}

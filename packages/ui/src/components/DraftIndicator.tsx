@@ -11,39 +11,35 @@ export type DraftState = "pending" | "syncing" | "synced" | "failed";
 
 export interface DraftIndicatorProps {
   state: DraftState;
+  /** Resolved, already-translated text - business rules and localization stay out of this component (AGENTS.md: "components receive resolved data and emit intent"). */
+  label: string;
   className?: string;
 }
 
-const STATE_CONTENT: Record<
-  DraftState,
-  { label: string; icon: LucideIcon; className: string }
-> = {
-  pending: {
-    label: "Saved on this device",
-    icon: ClockIcon,
-    className: "text-text-muted",
-  },
-  syncing: { label: "Syncing", icon: ClockIcon, className: "text-text-muted" },
-  synced: { label: "Synced", icon: CheckCircleIcon, className: "text-success" },
-  failed: {
-    label: "Could not send. Saved on this device.",
-    icon: AlertTriangleIcon,
-    className: "text-critical",
-  },
-};
+const STATE_TONE: Record<DraftState, { icon: LucideIcon; className: string }> =
+  {
+    pending: { icon: ClockIcon, className: "text-text-muted" },
+    syncing: { icon: ClockIcon, className: "text-text-muted" },
+    synced: { icon: CheckCircleIcon, className: "text-success" },
+    failed: { icon: AlertTriangleIcon, className: "text-critical" },
+  };
 
 /**
  * design/DESIGN.md section 18.2 primitives list, OFF-006: the app
  * must not claim success before server confirmation. This is the
  * single place that distinction is rendered, so every screen shows it
- * the same way. Wording matches DESIGN.md section 17.2's preferred
- * phrasing exactly ("Could not send. Your report is saved on this
- * device." - abbreviated here to fit a compact indicator; full text
- * belongs in the surrounding error message, not this badge).
+ * the same way. The icon and tone are derived from `state`; the
+ * caller supplies the already-translated `label` (DESIGN.md section
+ * 17.2's preferred phrasing, e.g. "Could not send. Your report is
+ * saved on this device.").
  */
-export function DraftIndicator({ state, className }: DraftIndicatorProps) {
-  const content = STATE_CONTENT[state];
-  const Icon = content.icon;
+export function DraftIndicator({
+  state,
+  label,
+  className,
+}: DraftIndicatorProps) {
+  const tone = STATE_TONE[state];
+  const Icon = tone.icon;
 
   return (
     <View
@@ -52,9 +48,9 @@ export function DraftIndicator({ state, className }: DraftIndicatorProps) {
         .join(" ")}
       accessibilityLiveRegion="polite"
     >
-      <Icon size={16} className={content.className} />
-      <Text variant="caption" className={content.className}>
-        {content.label}
+      <Icon size={16} className={tone.className} />
+      <Text variant="caption" className={tone.className}>
+        {label}
       </Text>
     </View>
   );

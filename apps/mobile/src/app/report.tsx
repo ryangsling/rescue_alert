@@ -5,6 +5,7 @@ import * as Location from "expo-location";
 import {
   Button,
   Checkbox,
+  DraftIndicator,
   MediaPicker,
   RadioGroup,
   SafeAreaContainer,
@@ -141,6 +142,12 @@ export default function ReportScreen() {
   const [submittedReference, setSubmittedReference] = useState<string | null>(
     null,
   );
+  const [createdCase, setCreatedCase] = useState<{
+    id: string;
+    public_reference: string;
+  } | null>(null);
+  const [failedPhotoUris, setFailedPhotoUris] = useState<string[]>([]);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -220,7 +227,7 @@ export default function ReportScreen() {
         localMediaUris: [...(draft?.localMediaUris ?? []), processed.uri],
       });
     } catch {
-      setError("Could not process that photo. Try a different one.");
+      setError(t("photo_process_error"));
     } finally {
       setProcessingPhoto(false);
     }
@@ -263,27 +270,65 @@ export default function ReportScreen() {
     );
     if (createError || !newCase) {
       setSubmitting(false);
-      setError(createError?.message ?? "Could not submit the report");
+      setError(t("report_submit_error"));
       return;
     }
 
-    // Graphic-content self-flagging UI isn't part of this flow yet -
-    // isGraphic defaults to false.
-    for (const uri of draft.localMediaUris ?? []) {
+    const failed = await uploadPhotos(newCase.id, draft.localMediaUris ?? []);
+    setSubmitting(false);
+    if (failed.length > 0) {
+      setCreatedCase(newCase);
+      setFailedPhotoUris(failed);
+      setPhotoUploadError(t("photo_upload_error"));
+      return;
+    }
+
+    await draftStore.delete(draft.idempotencyKey);
+    setSubmittedReference(newCase.public_reference);
+  }
+
+  /** Attempts every uri in order; returns the ones that failed so the
+   * caller can offer a retry without re-uploading what already
+   * succeeded. Graphic-content self-flagging UI isn't part of this
+   * flow yet - isGraphic defaults to false. */
+  async function uploadPhotos(
+    caseId: string,
+    uris: string[],
+  ): Promise<string[]> {
+    if (!userId) return uris;
+    const failed: string[] = [];
+    for (const uri of uris) {
       const bytes = await readProcessedImageBytes(uri);
-      await uploadCaseMedia(supabase, {
-        caseId: newCase.id,
+      const { error: uploadError } = await uploadCaseMedia(supabase, {
+        caseId,
         uploaderId: userId,
         mediaId: crypto.randomUUID(),
         fileExtension: "jpg",
         contentType: "image/jpeg",
         bytes,
       });
+      if (uploadError) failed.push(uri);
     }
+    return failed;
+  }
 
-    await draftStore.delete(draft.idempotencyKey);
+  async function handleRetryPhotos() {
+    if (!createdCase) return;
+    setSubmitting(true);
+    const failed = await uploadPhotos(createdCase.id, failedPhotoUris);
     setSubmitting(false);
-    setSubmittedReference(newCase.public_reference);
+    setFailedPhotoUris(failed);
+    if (failed.length > 0) return;
+    setPhotoUploadError(null);
+    if (draft) await draftStore.delete(draft.idempotencyKey);
+    setSubmittedReference(createdCase.public_reference);
+  }
+
+  async function handleContinueWithoutPhotos() {
+    if (!createdCase) return;
+    if (draft) await draftStore.delete(draft.idempotencyKey);
+    setPhotoUploadError(null);
+    setSubmittedReference(createdCase.public_reference);
   }
 
   if (!draft) return null;
@@ -298,6 +343,28 @@ export default function ReportScreen() {
           </Text>
           <Button variant="primary" onPress={() => router.replace("/")}>
             {t("action_close")}
+          </Button>
+        </Stack>
+      </SafeAreaContainer>
+    );
+  }
+
+  if (photoUploadError) {
+    return (
+      <SafeAreaContainer>
+        <Stack gap="4" className="flex-1 p-6">
+          <Text accessibilityRole="alert" className="text-critical">
+            {photoUploadError}
+          </Text>
+          <Button
+            variant="primary"
+            loading={submitting}
+            onPress={handleRetryPhotos}
+          >
+            {t("photo_retry_action")}
+          </Button>
+          <Button variant="outline" onPress={handleContinueWithoutPhotos}>
+            {t("report_submit")}
           </Button>
         </Stack>
       </SafeAreaContainer>
@@ -320,6 +387,16 @@ export default function ReportScreen() {
     <SafeAreaContainer>
       <Stack gap="4" className="flex-1 p-6">
         <Text tone="muted">{t("report_step_x_of_7", { step })}</Text>
+        <DraftIndicator
+          state={submitting ? "syncing" : error ? "failed" : "pending"}
+          label={t(
+            submitting
+              ? "draft_status_syncing"
+              : error
+                ? "draft_status_failed"
+                : "draft_status_pending",
+          )}
+        />
 
         {step === 1 && (
           <Stack gap="4">

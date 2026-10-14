@@ -126,6 +126,12 @@ export function ReportWizard({
   const [submittedReference, setSubmittedReference] = useState<string | null>(
     null,
   );
+  const [createdCase, setCreatedCase] = useState<{
+    id: string;
+    public_reference: string;
+  } | null>(null);
+  const [failedPhotoUris, setFailedPhotoUris] = useState<string[]>([]);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
 
   // Resumes the most recently updated draft, if one exists, rather
   // than always starting fresh - CASE-001's "survives termination"
@@ -188,7 +194,7 @@ export function ReportWizard({
         localMediaUris: [...(draft?.localMediaUris ?? []), processed.dataUrl],
       });
     } catch {
-      setError("Could not process that photo. Try a different one.");
+      setError(t("photo_process_error"));
     } finally {
       setProcessingPhoto(false);
     }
@@ -234,26 +240,70 @@ export function ReportWizard({
     );
     if (createError || !newCase) {
       setSubmitting(false);
-      setError(createError?.message ?? "Could not submit the report");
+      setError(t("report_submit_error"));
       return;
     }
 
-    // Graphic-content self-flagging UI isn't part of this flow yet - isGraphic defaults to false.
-    for (const dataUrl of draft.localMediaUris ?? []) {
+    const failed = await uploadPhotos(
+      client,
+      newCase.id,
+      draft.localMediaUris ?? [],
+    );
+    setSubmitting(false);
+    if (failed.length > 0) {
+      setCreatedCase(newCase);
+      setFailedPhotoUris(failed);
+      setPhotoUploadError(t("photo_upload_error"));
+      return;
+    }
+
+    await draftStore.delete(draft.idempotencyKey);
+    setSubmittedReference(newCase.public_reference);
+  }
+
+  /** Attempts every data URL in order; returns the ones that failed so
+   * the caller can offer a retry without re-uploading what already
+   * succeeded. Graphic-content self-flagging UI isn't part of this
+   * flow yet - isGraphic defaults to false. */
+  async function uploadPhotos(
+    client: ReturnType<typeof createClient>,
+    caseId: string,
+    dataUrls: string[],
+  ): Promise<string[]> {
+    const failed: string[] = [];
+    for (const dataUrl of dataUrls) {
       const blob = await dataUrlToBlob(dataUrl);
-      await uploadCaseMedia(client, {
-        caseId: newCase.id,
+      const { error: uploadError } = await uploadCaseMedia(client, {
+        caseId,
         uploaderId: userId,
         mediaId: crypto.randomUUID(),
         fileExtension: "jpg",
         contentType: "image/jpeg",
         bytes: blob,
       });
+      if (uploadError) failed.push(dataUrl);
     }
+    return failed;
+  }
 
-    await draftStore.delete(draft.idempotencyKey);
+  async function handleRetryPhotos() {
+    if (!createdCase) return;
+    setSubmitting(true);
+    const client = createClient();
+    const failed = await uploadPhotos(client, createdCase.id, failedPhotoUris);
     setSubmitting(false);
-    setSubmittedReference(newCase.public_reference);
+    setFailedPhotoUris(failed);
+    if (failed.length > 0) return;
+    setPhotoUploadError(null);
+    if (draft) await draftStore.delete(draft.idempotencyKey);
+    setSubmittedReference(createdCase.public_reference);
+  }
+
+  async function handleContinueWithoutPhotos() {
+    if (!createdCase) return;
+    if (draft) await draftStore.delete(draft.idempotencyKey);
+    setPhotoUploadError(null);
+    setSubmittedReference(createdCase.public_reference);
   }
 
   if (!draft) {
@@ -275,6 +325,31 @@ export function ReportWizard({
           className="min-h-12 rounded-full bg-primary px-4 py-2 font-semibold text-on-primary"
         >
           {t("action_close")}
+        </button>
+      </main>
+    );
+  }
+
+  if (photoUploadError) {
+    return (
+      <main className="mx-auto flex min-h-full max-w-md flex-col gap-4 p-8">
+        <p role="alert" className="text-critical">
+          {photoUploadError}
+        </p>
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={handleRetryPhotos}
+          className="min-h-12 rounded-full bg-primary px-4 py-2 font-semibold text-on-primary disabled:opacity-50"
+        >
+          {t("photo_retry_action")}
+        </button>
+        <button
+          type="button"
+          onClick={handleContinueWithoutPhotos}
+          className="min-h-12 rounded-full border border-border px-4 py-2 text-text"
+        >
+          {t("report_submit")}
         </button>
       </main>
     );

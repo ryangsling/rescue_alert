@@ -160,6 +160,7 @@ export const en = {
 
   // PRD 10.5, DESIGN.md 14.2 nearby feed.
   feed_heading: "Nearby cases",
+  feed_recently_viewed_heading: "Recently viewed",
   feed_search_placeholder: "Search by keyword",
   feed_filter_animal_type: "Animal type",
   feed_filter_all_animals: "All animals",
@@ -528,6 +529,22 @@ export const en = {
     "A healthy community animal doesn't always need to move",
   safety_relocation_guidance:
     "A healthy, unowned community animal is often better left where it is, fed and monitored, than relocated. Move an animal only when there is a lawful, welfare-based reason - an injury, immediate danger, or a planned foster/shelter/adoption placement - not simply because it is unowned.",
+
+  draft_status_pending: "Saved on this device",
+  draft_status_syncing: "Sending",
+  draft_status_synced: "Sent",
+  draft_status_failed: "Could not send. Saved on this device.",
+
+  report_submit_error:
+    "Could not send your report. It's saved on this device - try again, or check your connection.",
+  photo_upload_error:
+    "This photo could not be uploaded. Your report is saved. Try again now or submit without it.",
+  photo_retry_action: "Try again",
+  response_submit_error:
+    "Could not record your response. Nothing was lost - try again when you have a connection.",
+  response_already_committed_error:
+    "You've already committed to this case - refresh to see your response.",
+  photo_process_error: "Could not process that photo. Try a different one.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

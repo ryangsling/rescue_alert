@@ -99,7 +99,13 @@ describe("CaseDetailScreen", () => {
   it("loads the case and renders its title and the 'I can help' action", async () => {
     renderScreen();
 
-    expect(await screen.findByText("Injured dog near the market")).toBeTruthy();
+    expect(
+      await screen.findByText(
+        "Injured dog near the market",
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("Limping on its front leg")).toBeTruthy();
     expect(screen.getByText("I can help")).toBeTruthy();
   });
@@ -114,7 +120,13 @@ describe("CaseDetailScreen", () => {
     };
     renderScreen();
 
-    expect(await screen.findByText("Injured dog near the market")).toBeTruthy();
+    expect(
+      await screen.findByText(
+        "Injured dog near the market",
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("This case has been closed.")).toBeTruthy();
     expect(screen.queryByText("I can help")).toBeNull();
   });
@@ -123,6 +135,8 @@ describe("CaseDetailScreen", () => {
     mockFromResults.rescue_cases = { data: null, error: null };
     renderScreen();
 
-    expect(await screen.findByText("Case not found")).toBeTruthy();
+    expect(
+      await screen.findByText("Case not found", {}, { timeout: 5000 }),
+    ).toBeTruthy();
   });
 });

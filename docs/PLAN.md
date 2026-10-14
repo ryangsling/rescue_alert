@@ -749,7 +749,7 @@ All mutation-tested guarantees (both real bugs, plus the appeal ownership and se
 
 ## Part 18 - Offline, reliability, and performance hardening
 
-**Status:** In progress, paused mid-part on a session usage limit. Draft persistence/idempotency were confirmed already correct from earlier parts (not re-built); the retry-queue, pending/confirmed-state, and three-part error message gaps found by direct code inspection are fixed on mobile and web; a web-side visible draft-sync indicator and the device/network manual tests remain open (see "Not done").
+**Status:** Draft persistence/idempotency were confirmed already correct from earlier parts (not re-built); the retry-queue, pending/confirmed-state, and three-part error message gaps found by direct code inspection are fixed on both apps, including a visible draft-sync indicator on both; the device/network manual tests remain open, as they do everywhere else in this plan (see "Not done").
 
 **Real gaps found by direct inspection, not assumed:**
 
@@ -767,7 +767,7 @@ All mutation-tested guarantees (both real bugs, plus the appeal ownership and se
 - [x] Idempotency applied to every retryable write - case creation, responses, and notifications (AGENTS.md's three named categories) were all already correctly guaranteed, confirmed by reading the code and schema rather than assumed
 - [x] Recently viewed case summaries cached - new `recentlyViewedStore.ts` (mobile, AsyncStorage-backed, capped at 10, most-recent-first, de-duplicating a re-view), recorded on every case-detail load and shown as a row on the mobile home screen; deliberately caches only title/urgency/reference, never live status/needs, since those can go stale and this project never shows state it can't stand behind
 - [x] Transactional status transitions - already true since Part 1/13 (`transition_case_status()`), reconfirmed, not changed
-- [x] Clear distinction between pending local state and confirmed server state throughout the interface - the two concrete violations found (DraftIndicator's non-use, and both silent-failure handlers) are fixed; this is not a claim that every single screen in the app was individually audited
+- [x] Clear distinction between pending local state and confirmed server state throughout the interface - the two concrete violations found (DraftIndicator's non-use, and both silent-failure handlers) are fixed, and the report wizard on both apps now shows a live saved/sending/failed indicator; this is not a claim that every single screen in the app was individually audited
 - [x] Error messages following the three-part pattern in DESIGN.md section 17.3 - the hardcoded fallback strings found are fixed; again, not an exhaustive audit of every error string in the app
 - [x] Performance work: thumbnails in lists, deferred map loading, indexed geospatial queries, bounded realtime subscriptions - all four confirmed already in place from earlier parts, nothing new needed
 - [ ] Low-memory Android device testing - no device available in this session
@@ -789,10 +789,9 @@ All mutation-tested guarantees (both real bugs, plus the appeal ownership and se
 
 ### Not done, and needed before this part is fully closed
 
-1. A web-side visible sync-state indicator equivalent to mobile's `DraftIndicator` - web's report wizard now has correct retry/error logic and localized messages, but no small persistent "saved on this device / sending / sent" badge the way mobile now does.
-2. A dedicated screen-level test for the photo-upload retry queue (both apps) - the underlying API functions are unit-tested and the new logic typechecks/lints/passes the full existing suite, but driving a 7-step wizard through a simulated upload failure in RNTL/Playwright was not attempted this session.
-3. Device/network-conditions testing (low-memory Android, throttled network, airplane mode) - no device or network-shaping tool is available in this sandboxed session; this is the same disclosed limitation as every other manual-device item in this plan.
-4. An exhaustive audit of every mutation handler in both apps for unchecked errors - this part found and fixed the two highest-stakes instances (report submission, response commitment) by direct inspection; other handlers (withdraw, coordinator status changes, comment/update posting) were not individually re-audited and may have the same unchecked-error pattern. Worth a dedicated pass, not assumed fixed by association.
+1. A dedicated screen-level test for the photo-upload retry queue (both apps) - the underlying API functions are unit-tested and the new logic typechecks/lints/passes the full existing suite, but driving a 7-step wizard through a simulated upload failure in RNTL/Playwright was not attempted this session.
+2. Device/network-conditions testing (low-memory Android, throttled network, airplane mode) - no device or network-shaping tool is available in this sandboxed session; this is the same disclosed limitation as every other manual-device item in this plan.
+3. An exhaustive audit of every mutation handler in both apps for unchecked errors - this part found and fixed the two highest-stakes instances (report submission, response commitment) by direct inspection; other handlers (withdraw, coordinator status changes, comment/update posting) were not individually re-audited and may have the same unchecked-error pattern. Worth a dedicated pass, not assumed fixed by association.
 
 ## Part 19 - Test suite completion
 

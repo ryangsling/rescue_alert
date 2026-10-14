@@ -365,6 +365,24 @@ export function ReportWizard({
   return (
     <main className="mx-auto flex min-h-full max-w-md flex-col gap-4 p-8">
       <p className="text-text-muted">{t("report_step_x_of_7", { step })}</p>
+      <p
+        aria-live="polite"
+        className={
+          submitting
+            ? "text-text-muted"
+            : error
+              ? "text-critical"
+              : "text-text-muted"
+        }
+      >
+        {t(
+          submitting
+            ? "draft_status_syncing"
+            : error
+              ? "draft_status_failed"
+              : "draft_status_pending",
+        )}
+      </p>
 
       {step === 1 && (
         <Step1

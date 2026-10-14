@@ -310,7 +310,11 @@ export function FeedList({ animalTypes }: { animalTypes: AnimalType[] }) {
         </div>
       </div>
 
-      {error && <p className="text-critical">{error}</p>}
+      {error && (
+        <p role="alert" className="text-critical">
+          {error}
+        </p>
+      )}
 
       {mode === "map" ? (
         <div className="h-96 w-full">

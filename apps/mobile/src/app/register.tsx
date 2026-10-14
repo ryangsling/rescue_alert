@@ -175,7 +175,11 @@ export default function RegisterScreen() {
           errorText={fieldErrors.communityRulesAccepted}
         />
 
-        {submitError && <Text className="text-critical">{submitError}</Text>}
+        {submitError && (
+          <Text accessibilityRole="alert" className="text-critical">
+            {submitError}
+          </Text>
+        )}
 
         <Button variant="primary" loading={submitting} onPress={handleSubmit}>
           {t("auth_register_submit")}

@@ -67,7 +67,11 @@ export default function SignInScreen() {
           secureTextEntry
         />
 
-        {error && <Text className="text-critical">{error}</Text>}
+        {error && (
+          <Text accessibilityRole="alert" className="text-critical">
+            {error}
+          </Text>
+        )}
 
         <Button variant="primary" loading={submitting} onPress={handleSubmit}>
           {t("auth_sign_in_heading")}

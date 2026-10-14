@@ -514,6 +514,18 @@ export const en = {
   safety_hazard_heading: "Other hazards",
   safety_hazard_guidance:
     "Traffic, electrical lines, deep water, height, and crowd situations each call for their own caution - note any hazard when reporting a case so responders can prepare.",
+
+  report_hazards_heading: "Does the scene involve any of these hazards?",
+  hazard_traffic: "Traffic",
+  hazard_violence: "Violence",
+  hazard_electrical: "Electrical",
+  hazard_water: "Deep water",
+  hazard_height: "Height",
+  hazard_other: "Other hazard",
+  case_hazards_heading: "Hazards noted at the scene",
+  safety_response_callout_heading: "Before you go on-site",
+  safety_relocation_heading: "A healthy community animal doesn't always need to move",
+  safety_relocation_guidance: "A healthy, unowned community animal is often better left where it is, fed and monitored, than relocated. Move an animal only when there is a lawful, welfare-based reason - an injury, immediate danger, or a planned foster/shelter/adoption placement - not simply because it is unowned.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

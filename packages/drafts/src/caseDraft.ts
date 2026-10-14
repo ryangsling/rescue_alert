@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   caseLocationSchema,
+  hazardTypeSchema,
   incidentTypeSchema,
   urgencyLevelSchema,
 } from "@rescue-alert/validation";
@@ -29,6 +30,8 @@ export const caseDraftSchema = z.object({
   upazilaOrThana: z.string().optional(),
   creatorOnSite: z.boolean().optional(),
   lastSeenAt: z.iso.datetime().optional(),
+  /** PRD 12.1 hazard flags - optional like every other step field, since a draft may not have reached this step yet. */
+  hazardFlags: z.array(hazardTypeSchema).optional(),
   /** Local file URIs (mobile) or object URLs/blob references (web) pending compression/upload - never a remote storage path until actually uploaded. */
   localMediaUris: z.array(z.string()).default([]),
   createdAt: z.iso.datetime(),

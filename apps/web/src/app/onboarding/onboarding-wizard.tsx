@@ -180,7 +180,11 @@ export function OnboardingWizard({
         />
       </label>
 
-      {error && <p className="text-critical">{error}</p>}
+      {error && (
+        <p role="alert" className="text-critical">
+          {error}
+        </p>
+      )}
 
       <button
         type="button"

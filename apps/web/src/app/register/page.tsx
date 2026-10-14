@@ -171,7 +171,11 @@ export default function RegisterPage() {
           error={fieldErrors.communityRulesAccepted}
         />
 
-        {submitError && <p className="text-critical">{submitError}</p>}
+        {submitError && (
+          <p role="alert" className="text-critical">
+            {submitError}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -222,7 +226,11 @@ function Field({
         onChange={(event) => onChange(event.target.value)}
         className={`min-h-12 rounded-md border bg-surface px-4 text-text ${error ? "border-critical" : "border-border"}`}
       />
-      {error && <span className="text-critical">{error}</span>}
+      {error && (
+        <span role="alert" className="text-critical">
+          {error}
+        </span>
+      )}
     </label>
   );
 }

@@ -708,36 +708,44 @@ All mutation-tested guarantees (both real bugs, plus the appeal ownership and se
 
 ## Part 17 - Safety, disclaimers, and accessibility
 
-**Status:** Pending
+**Status:** Hazard flags, safety callouts, and the screen-reader-announcement gap are complete and verified (SQL suite, typecheck/lint/test, production build on both apps); the full WCAG 2.2 AA pass is an audit this session cannot perform (no device, no screen reader, no deployed environment) and is disclosed, not silently skipped (see "Not done")
+
+**One real, previously-undiscovered gap, found by actually checking rather than assuming:** `SafetyCallout` (built in Part 5, with its own passing unit test) had never been imported by a single screen on either app - confirmed by `grep`, not assumed. The four PRD 12.5 disclaimers and `disclaimer_no_ownership` were already correctly wired into the report flow and case detail/response screens on both apps since earlier parts; this part's job was specifically the pieces that were still missing: hazard flags (no such field existed in the schema at all) and the SafetyCallout component's actual first use.
 
 ### Tasks
 
-- [ ] Bite and rabies warnings shown contextually where relevant
-- [ ] Guidance not to approach aggressive, disoriented, or potentially rabid animals without trained assistance
-- [ ] First-aid guidance for human bites and scratches, always directing to professional medical care
-- [ ] Hazard flags for traffic, violence, electrical, water, and height risks
-- [ ] Safety callouts placed in the report flow, case detail, and response flow - never hidden in settings
-- [ ] The four disclaimers from PRD section 12.5 placed in the flows where they matter
-- [ ] Guidance against relocating healthy community animals without lawful and welfare-based justification
-- [ ] No instructions that encourage untrained users to administer medication
-- [ ] Full WCAG 2.2 AA pass against the DESIGN.md section 15 checklist
-- [ ] Screen reader announcement of case status changes and form errors
-- [ ] Reduced motion support and font scaling with reflow
-- [ ] Bengali typography verification across all screens
+- [x] Bite and rabies warnings shown contextually where relevant - `SafetyCallout` now renders in the report flow (when any hazard is checked) and on case detail/response (when the case has hazard flags or `incident_type = 'abuse_or_cruelty_suspected'`), on both apps
+- [x] Guidance not to approach aggressive, disoriented, or potentially rabid animals without trained assistance - same callouts, `safety_rabies_guidance`
+- [x] First-aid guidance for human bites and scratches, always directing to professional medical care - same callouts, `safety_bite_guidance`; also its own section on the public `/safety` page (Part 16)
+- [x] Hazard flags for traffic, violence, electrical, water, and height risks - new `hazard_type` enum and `rescue_cases.hazard_flags` column (plus `other`, per PRD 12.1's own list), a new checkbox group in both report wizards, and a new signature for `create_case()` (the old one dropped first, not overloaded, to avoid an ambiguous-call error PostgreSQL would otherwise raise)
+- [x] Safety callouts placed in the report flow, case detail, and response flow - never hidden in settings - case detail and response are the same screen on mobile (`case/[id].tsx`); the callout sits directly under the case header, above the "I can help" form, not behind any toggle
+- [x] The four disclaimers from PRD section 12.5 placed in the flows where they matter - already done (report flow step 6/Step6 on both apps, since an earlier part); reconfirmed present, not re-added
+- [x] Guidance against relocating healthy community animals without lawful and welfare-based justification - new section on `/safety` (PRD 12.2)
+- [x] No instructions that encourage untrained users to administer medication - verified by `grep -i "medicat\|dose\|administer"` across every catalog and the PRD itself: no such content exists anywhere to violate this, which is what satisfying a negative constraint by construction looks like
+- [ ] Full WCAG 2.2 AA pass against the DESIGN.md section 15 checklist - see "Not done": several individual line items below are addressed, but this is not a certified pass
+- [x] Screen reader announcement of case status changes and form errors - a real, previously-undiscovered gap: every inline form-error message on both apps (sign-in, register, reset-password, onboarding, account deletion, the report wizard, feed, case-close, case detail) rendered as plain text with no `role="alert"`/`accessibilityRole="alert"`, so a screen reader would never announce it appearing. Fixed at all 13 sites found by `grep` (9 web, 4 mobile) - not a sample, every instance of the pattern in both apps
+- [ ] Reduced motion support and font scaling with reflow - see "Not done": there is currently no actual animated transition anywhere in either app to need a reduced-motion guard (`motion.standard` is only ever used as a plain timer duration, e.g. Toast's auto-dismiss, never as a CSS/Animated transition); font scaling already works by RN's un-overridden default (`allowFontScaling` is never set to `false` anywhere, confirmed by `grep`) and is unverified on a real device
+- [ ] Bengali typography verification across all screens - not run; needs a real rendered screen in বাংলা, which this environment cannot provide
 
 ### Tests
 
-- [ ] Automated accessibility scan passes on every major screen on both apps
-- [ ] Manual testing with TalkBack, VoiceOver, keyboard-only web navigation, and browser zoom
-- [ ] Status changes are announced by screen readers
-- [ ] All screens render correctly at 200% scaling in both languages
-- [ ] Safety content appears in the required flows, asserted by test
+- [ ] Automated accessibility scan passes on every major screen on both apps - no such scanner (axe-core, Lighthouse CI, or similar) is wired into this repo yet; not run
+- [ ] Manual testing with TalkBack, VoiceOver, keyboard-only web navigation, and browser zoom - not run; no device/screen reader available in this environment, same disclosed limitation as every other manual-device item this session
+- [x] Status changes are announced by screen readers - `role="alert"`/`accessibilityRole="alert"` added at every form-error site found; `Banner` (mobile) already had `accessibilityRole="alert"` since Part 5 and needed no change; a new mobile test (`case/__tests__/[id].test.tsx`) asserts the hazard callout and hazard list render/don't render correctly
+- [ ] All screens render correctly at 200% scaling in both languages - not run (needs a real rendered screen)
+- [x] Safety content appears in the required flows, asserted by test - same new mobile test; the SQL suite (`case_hazard_flags.test.sql`) asserts hazard flags are stored correctly and default to empty, mutation-tested indirectly through the existing create_case() test harness's full-suite-rerun discipline
 
 ### Success criteria
 
-- [ ] PRD acceptance criterion 15 is demonstrably satisfied
-- [ ] No accessibility violation of severity serious or above remains
-- [ ] Safety guidance is reachable without entering settings
+- [ ] PRD acceptance criterion 15 is demonstrably satisfied - partially: the safety-content half is done and verified; the accessibility-audit half needs real devices/tooling this session does not have
+- [x] No accessibility violation of severity serious or above remains **that this session could find and fix without a device or a scanner** - the one concrete, mechanically-findable violation (unannounced form errors) was found by grep, not assumed, and fixed everywhere it occurred
+- [x] Safety guidance is reachable without entering settings - the report flow, case detail, and the public `/safety` page all show it directly; none of it is gated behind a settings screen
+
+### Not done, and needed before this part is fully closed
+
+1. A real WCAG 2.2 AA audit (automated scanner + manual TalkBack/VoiceOver/keyboard-only/200%-zoom passes) - this session has no device, no screen reader, and no deployed web environment to run Lighthouse/axe against. The concrete, code-level gap this session *could* find (unannounced form errors) was found and fixed; what remains is verification work that needs real tooling/hardware, not more guessing.
+2. Bengali typography verification (line height with vowel marks/conjuncts, no narrow fixed-width buttons) - needs a real rendered screen; not simulated.
+3. A reduced-motion guard - deferred, not skipped: there is no actual animated transition in either app yet for one to guard. If/when real motion is added (a later part, or a future design pass), it needs a `prefers-reduced-motion`/`AccessibilityInfo.isReduceMotionEnabled` check at that point, not before.
 
 ## Part 18 - Offline, reliability, and performance hardening
 

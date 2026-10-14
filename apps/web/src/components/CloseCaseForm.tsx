@@ -255,7 +255,11 @@ export function CloseCaseForm({ caseId }: { caseId: string }) {
         <p className="text-text-muted">{t("case_close_review_body")}</p>
       </div>
 
-      {error ? <p className="text-critical">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-critical">
+          {error}
+        </p>
+      ) : null}
 
       <button
         type="button"

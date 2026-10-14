@@ -166,7 +166,11 @@ export function AccountSettings({
                 className="min-h-12 rounded-md border border-border bg-surface px-4 text-text"
               />
             </label>
-            {deleteError && <p className="text-critical">{deleteError}</p>}
+            {deleteError && (
+              <p role="alert" className="text-critical">
+                {deleteError}
+              </p>
+            )}
             <button
               type="submit"
               disabled={busy}

@@ -82,6 +82,16 @@ const ASSISTANCE_LABEL_KEY: Record<AssistanceType, TranslationKey> = {
   financial_support: "assistance_financial_support",
 };
 
+type HazardType = Database["public"]["Enums"]["hazard_type"];
+const HAZARD_LABEL_KEY: Record<HazardType, TranslationKey> = {
+  traffic: "hazard_traffic",
+  violence: "hazard_violence",
+  electrical: "hazard_electrical",
+  water: "hazard_water",
+  height: "hazard_height",
+  other: "hazard_other",
+};
+
 const STATUS_LABEL_KEY: Record<CaseRow["status"], TranslationKey> = {
   draft: "status_draft",
   submitted: "status_submitted",
@@ -233,7 +243,7 @@ export function CaseDetail({ caseId }: { caseId: string }) {
       supabase
         .from("rescue_cases")
         .select(
-          "id, creator_id, public_reference, incident_type, animal_type_id, urgency, status, title, description, approximate_location, division, district, upazila_or_thana, landmark, reported_at, last_seen_at, creator_on_site, exact_location_visibility, coordinator_id, organization_id, idempotency_key, created_at, updated_at, closed_at, closure_reason, merged_into_case_id",
+          "id, creator_id, public_reference, incident_type, animal_type_id, urgency, status, title, description, approximate_location, division, district, upazila_or_thana, landmark, reported_at, last_seen_at, creator_on_site, exact_location_visibility, coordinator_id, organization_id, idempotency_key, created_at, updated_at, closed_at, closure_reason, merged_into_case_id, hazard_flags",
         )
         .eq("id", caseId)
         .maybeSingle(),
@@ -596,6 +606,30 @@ export function CaseDetail({ caseId }: { caseId: string }) {
           {t(STATUS_LABEL_KEY[caseRow.status])}
         </span>
       </div>
+
+      {caseRow.hazard_flags.length > 0 ? (
+        <div>
+          <h2 className="text-sm font-semibold text-text">
+            {t("case_hazards_heading")}
+          </h2>
+          <p className="text-text-muted">
+            {caseRow.hazard_flags
+              .map((hazard) => t(HAZARD_LABEL_KEY[hazard]))
+              .join(", ")}
+          </p>
+        </div>
+      ) : null}
+
+      {caseRow.hazard_flags.length > 0 ||
+      caseRow.incident_type === "abuse_or_cruelty_suspected" ? (
+        <div className="rounded-medium border border-warning p-4" role="alert">
+          <p className="font-semibold text-warning">
+            {t("safety_response_callout_heading")}
+          </p>
+          <p className="text-text-muted">{t("safety_rabies_guidance")}</p>
+          <p className="text-text-muted">{t("safety_bite_guidance")}</p>
+        </div>
+      ) : null}
 
       {isCaseClosed ? (
         <p className="rounded-md bg-neutral-container px-3 py-2 text-neutral">

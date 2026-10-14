@@ -87,7 +87,11 @@ export default function ResetPasswordScreen() {
           secureTextEntry
         />
 
-        {error && <Text className="text-critical">{error}</Text>}
+        {error && (
+          <Text accessibilityRole="alert" className="text-critical">
+            {error}
+          </Text>
+        )}
 
         <Button variant="primary" loading={submitting} onPress={handleSubmit}>
           {t("auth_reset_password_submit")}

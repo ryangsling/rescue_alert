@@ -29,6 +29,11 @@ export function SafetyContent() {
         <p>{t("safety_hazard_guidance")}</p>
       </section>
 
+      <section>
+        <h2>{t("safety_relocation_heading")}</h2>
+        <p>{t("safety_relocation_guidance")}</p>
+      </section>
+
       <nav>
         <Link href="/share/open-cases">{t("public_nav_open_cases")}</Link>
         <Link href="/directory">{t("public_nav_directory")}</Link>

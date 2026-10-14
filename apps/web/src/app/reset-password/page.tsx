@@ -85,7 +85,11 @@ export default function ResetPasswordPage() {
           />
         </label>
 
-        {error && <p className="text-critical">{error}</p>}
+        {error && (
+          <p role="alert" className="text-critical">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"

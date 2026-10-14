@@ -1313,6 +1313,7 @@ export type Database = {
           district: string | null;
           division: string | null;
           exact_location_visibility: Database["public"]["Enums"]["case_location_sensitivity"];
+          hazard_flags: Database["public"]["Enums"]["hazard_type"][];
           id: string;
           idempotency_key: string | null;
           incident_type: Database["public"]["Enums"]["incident_type"];
@@ -1342,6 +1343,7 @@ export type Database = {
           district?: string | null;
           division?: string | null;
           exact_location_visibility?: Database["public"]["Enums"]["case_location_sensitivity"];
+          hazard_flags?: Database["public"]["Enums"]["hazard_type"][];
           id?: string;
           idempotency_key?: string | null;
           incident_type: Database["public"]["Enums"]["incident_type"];
@@ -1371,6 +1373,7 @@ export type Database = {
           district?: string | null;
           division?: string | null;
           exact_location_visibility?: Database["public"]["Enums"]["case_location_sensitivity"];
+          hazard_flags?: Database["public"]["Enums"]["hazard_type"][];
           id?: string;
           idempotency_key?: string | null;
           incident_type?: Database["public"]["Enums"]["incident_type"];
@@ -1869,6 +1872,7 @@ export type Database = {
           p_description: string;
           p_district: string;
           p_division: string;
+          p_hazard_flags?: Database["public"]["Enums"]["hazard_type"][];
           p_idempotency_key: string;
           p_incident_type: Database["public"]["Enums"]["incident_type"];
           p_landmark: string;
@@ -1890,6 +1894,7 @@ export type Database = {
           district: string | null;
           division: string | null;
           exact_location_visibility: Database["public"]["Enums"]["case_location_sensitivity"];
+          hazard_flags: Database["public"]["Enums"]["hazard_type"][];
           id: string;
           idempotency_key: string | null;
           incident_type: Database["public"]["Enums"]["incident_type"];
@@ -2202,6 +2207,7 @@ export type Database = {
           district: string | null;
           division: string | null;
           exact_location_visibility: Database["public"]["Enums"]["case_location_sensitivity"];
+          hazard_flags: Database["public"]["Enums"]["hazard_type"][];
           id: string;
           idempotency_key: string | null;
           incident_type: Database["public"]["Enums"]["incident_type"];
@@ -2296,6 +2302,8 @@ export type Database = {
         | "organization_responder"
         | "adoption_facilitator"
         | "moderator_contribution";
+      hazard_type:
+        "traffic" | "violence" | "electrical" | "water" | "height" | "other";
       incident_type:
         | "injured_animal"
         | "road_accident"
@@ -2577,6 +2585,14 @@ export const Constants = {
         "organization_responder",
         "adoption_facilitator",
         "moderator_contribution",
+      ],
+      hazard_type: [
+        "traffic",
+        "violence",
+        "electrical",
+        "water",
+        "height",
+        "other",
       ],
       incident_type: [
         "injured_animal",

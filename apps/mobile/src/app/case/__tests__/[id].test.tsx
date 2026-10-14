@@ -85,6 +85,8 @@ describe("CaseDetailScreen", () => {
         upazila_or_thana: "Dhanmondi",
         district: "Dhaka",
         updated_at: "2026-01-01T00:00:00Z",
+        incident_type: "injured_animal",
+        hazard_flags: [],
       },
       error: null,
     };
@@ -129,6 +131,42 @@ describe("CaseDetailScreen", () => {
     ).toBeTruthy();
     expect(screen.getByText("This case has been closed.")).toBeTruthy();
     expect(screen.queryByText("I can help")).toBeNull();
+  });
+
+  it("shows the hazard list and a safety callout when the case has reported hazards", async () => {
+    mockFromResults.rescue_cases = {
+      data: {
+        ...(mockFromResults.rescue_cases.data as object),
+        hazard_flags: ["traffic", "electrical"],
+      },
+      error: null,
+    };
+    renderScreen();
+
+    expect(
+      await screen.findByText(
+        "Injured dog near the market",
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Hazards noted at the scene")).toBeTruthy();
+    expect(screen.getByText("Traffic, Electrical")).toBeTruthy();
+    expect(screen.getByText("Before you go on-site")).toBeTruthy();
+  });
+
+  it("does not show a safety callout when the case has no reported hazards", async () => {
+    renderScreen();
+
+    expect(
+      await screen.findByText(
+        "Injured dog near the market",
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("Hazards noted at the scene")).toBeNull();
+    expect(screen.queryByText("Before you go on-site")).toBeNull();
   });
 
   it("shows a not-found state when the case does not exist", async () => {

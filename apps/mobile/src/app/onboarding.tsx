@@ -184,7 +184,11 @@ export default function OnboardingScreen() {
           }))}
         />
 
-        {error && <Text className="text-critical">{error}</Text>}
+        {error && (
+          <Text accessibilityRole="alert" className="text-critical">
+            {error}
+          </Text>
+        )}
 
         <Button variant="primary" loading={submitting} onPress={handleFinish}>
           {t("onboarding_finish")}

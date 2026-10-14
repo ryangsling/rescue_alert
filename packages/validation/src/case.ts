@@ -3,6 +3,7 @@ import type { Database } from "@rescue-alert/types";
 
 type IncidentType = Database["public"]["Enums"]["incident_type"];
 type UrgencyLevel = Database["public"]["Enums"]["urgency_level"];
+type HazardType = Database["public"]["Enums"]["hazard_type"];
 
 /** PRD 8.1's 16 incident types. Kept as a literal array (not derived at runtime) so Zod has a tuple to validate against. */
 const INCIDENT_TYPES = [
@@ -32,6 +33,16 @@ const URGENCY_LEVELS = [
   "adoption_community",
 ] as const satisfies readonly UrgencyLevel[];
 
+/** PRD 12.1: "Let users indicate traffic, violence, electrical, water, height, or other hazards." */
+const HAZARD_TYPES = [
+  "traffic",
+  "violence",
+  "electrical",
+  "water",
+  "height",
+  "other",
+] as const satisfies readonly HazardType[];
+
 // Compile-time exhaustiveness check in both directions, same pattern
 // as onboarding.ts's capabilities list: fails to typecheck if either
 // literal array and the DB enum it mirrors ever drift apart.
@@ -47,11 +58,17 @@ const _urgencyLevelsExhaustive: _AssertExhaustive<
   (typeof URGENCY_LEVELS)[number],
   UrgencyLevel
 > = [true, true];
+const _hazardTypesExhaustive: _AssertExhaustive<
+  (typeof HAZARD_TYPES)[number],
+  HazardType
+> = [true, true];
 void _incidentTypesExhaustive;
 void _urgencyLevelsExhaustive;
+void _hazardTypesExhaustive;
 
 export const incidentTypeSchema = z.enum(INCIDENT_TYPES);
 export const urgencyLevelSchema = z.enum(URGENCY_LEVELS);
+export const hazardTypeSchema = z.enum(HAZARD_TYPES);
 
 /** A GPS point, movable pin, or manually chosen location (CASE-006) - always lat/lng at this layer; PostGIS WKT conversion happens in packages/api. */
 export const caseLocationSchema = z.object({
@@ -82,6 +99,7 @@ export const createCaseSchema = z.object({
   upazilaOrThana: z.string().trim().optional(),
   creatorOnSite: z.boolean(),
   lastSeenAt: z.iso.datetime().optional(),
+  hazardFlags: z.array(hazardTypeSchema).default([]),
 });
 
 export type CreateCaseInput = z.infer<typeof createCaseSchema>;

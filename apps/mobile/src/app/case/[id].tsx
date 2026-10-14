@@ -17,6 +17,7 @@ import {
   ReportDialog,
   ResponderCard,
   SafeAreaContainer,
+  SafetyCallout,
   StateView,
   Stack,
   Text,
@@ -169,6 +170,16 @@ const ASSISTANCE_LABEL_KEY: Record<AssistanceType, TranslationKey> = {
   financial_support: "assistance_financial_support",
 };
 
+type HazardType = Database["public"]["Enums"]["hazard_type"];
+const HAZARD_LABEL_KEY: Record<HazardType, TranslationKey> = {
+  traffic: "hazard_traffic",
+  violence: "hazard_violence",
+  electrical: "hazard_electrical",
+  water: "hazard_water",
+  height: "hazard_height",
+  other: "hazard_other",
+};
+
 const REPORT_REASONS = [
   { value: "harassment" as const, key: "report_reason_harassment" as const },
   { value: "spam" as const, key: "report_reason_spam" as const },
@@ -275,7 +286,7 @@ export default function CaseDetailScreen() {
       supabase
         .from("rescue_cases")
         .select(
-          "id, creator_id, public_reference, incident_type, animal_type_id, urgency, status, title, description, approximate_location, division, district, upazila_or_thana, landmark, reported_at, last_seen_at, creator_on_site, exact_location_visibility, coordinator_id, organization_id, idempotency_key, created_at, updated_at, closed_at, closure_reason, merged_into_case_id",
+          "id, creator_id, public_reference, incident_type, animal_type_id, urgency, status, title, description, approximate_location, division, district, upazila_or_thana, landmark, reported_at, last_seen_at, creator_on_site, exact_location_visibility, coordinator_id, organization_id, idempotency_key, created_at, updated_at, closed_at, closure_reason, merged_into_case_id, hazard_flags",
         )
         .eq("id", id)
         .maybeSingle(),
@@ -669,6 +680,29 @@ export default function CaseDetailScreen() {
             setReportTarget({ targetType: "comment", targetId: caseRow.id })
           }
         />
+
+        {caseRow.hazard_flags.length > 0 ? (
+          <Stack gap="1">
+            <Text variant="titleMedium">{t("case_hazards_heading")}</Text>
+            <Text tone="muted">
+              {caseRow.hazard_flags
+                .map((hazard) => t(HAZARD_LABEL_KEY[hazard]))
+                .join(", ")}
+            </Text>
+          </Stack>
+        ) : null}
+
+        {(caseRow.hazard_flags.length > 0 ||
+          caseRow.incident_type === "abuse_or_cruelty_suspected") && (
+          <SafetyCallout
+            tone="warning"
+            heading={t("safety_response_callout_heading")}
+            instructions={[
+              t("safety_rabies_guidance"),
+              t("safety_bite_guidance"),
+            ]}
+          />
+        )}
 
         {isCaseClosed ? (
           <Banner tone="neutral" message={t("case_detail_closed_notice")} />

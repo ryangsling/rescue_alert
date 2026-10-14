@@ -25,6 +25,7 @@ describe("createCase", () => {
       description: "Limping dog",
       location,
       creatorOnSite: true,
+      hazardFlags: [],
     });
 
     expect(rpc).toHaveBeenCalledWith("create_case", {
@@ -40,7 +41,28 @@ describe("createCase", () => {
       p_upazila_or_thana: null,
       p_creator_on_site: true,
       p_last_seen_at: undefined,
+      p_hazard_flags: [],
     });
+  });
+
+  it("forwards reported hazard flags (PRD 12.1)", async () => {
+    const rpc = vi.fn();
+    const client = { rpc } as unknown as SupabaseClient<Database>;
+
+    await createCase(client, {
+      idempotencyKey: "c100f342-7586-458f-b912-f4db3934a1f4",
+      incidentType: "road_accident",
+      urgency: "critical",
+      description: "Dog hit near a busy road",
+      location,
+      creatorOnSite: true,
+      hazardFlags: ["traffic", "electrical"],
+    });
+
+    expect(rpc).toHaveBeenCalledWith(
+      "create_case",
+      expect.objectContaining({ p_hazard_flags: ["traffic", "electrical"] }),
+    );
   });
 });
 

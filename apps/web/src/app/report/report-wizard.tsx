@@ -21,6 +21,7 @@ import { dataUrlToBlob, processImageForUpload } from "../../lib/processImage";
 
 type IncidentType = Database["public"]["Enums"]["incident_type"];
 type UrgencyLevel = Database["public"]["Enums"]["urgency_level"];
+type HazardType = Database["public"]["Enums"]["hazard_type"];
 type AnimalType = {
   id: string;
   slug: string;
@@ -78,6 +79,24 @@ const URGENCY_LEVELS: UrgencyLevel[] = [
   "support_needed",
   "adoption_community",
 ];
+
+const HAZARD_TYPES: HazardType[] = [
+  "traffic",
+  "violence",
+  "electrical",
+  "water",
+  "height",
+  "other",
+];
+
+const HAZARD_LABEL_KEY: Record<HazardType, TranslationKey> = {
+  traffic: "hazard_traffic",
+  violence: "hazard_violence",
+  electrical: "hazard_electrical",
+  water: "hazard_water",
+  height: "hazard_height",
+  other: "hazard_other",
+};
 
 const URGENCY_LABEL_KEY: Record<UrgencyLevel, TranslationKey> = {
   critical: "urgency_critical",
@@ -200,6 +219,7 @@ export function ReportWizard({
       upazilaOrThana: draft.upazilaOrThana,
       creatorOnSite: draft.creatorOnSite ?? false,
       lastSeenAt: draft.lastSeenAt,
+      hazardFlags: draft.hazardFlags ?? [],
     });
     if (!result.success) {
       setError(result.error.issues[0]?.message ?? t("form_required_field"));
@@ -697,6 +717,35 @@ function Step5({
         />
         <span className="text-text">{t("report_still_here_label")}</span>
       </label>
+
+      <h2 className="text-lg font-semibold text-text">
+        {t("report_hazards_heading")}
+      </h2>
+      {HAZARD_TYPES.map((hazard) => (
+        <label key={hazard} className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={(draft.hazardFlags ?? []).includes(hazard)}
+            onChange={(event) => {
+              const current = new Set(draft.hazardFlags ?? []);
+              if (event.target.checked) current.add(hazard);
+              else current.delete(hazard);
+              onChange({ hazardFlags: Array.from(current) });
+            }}
+          />
+          <span className="text-text">{t(HAZARD_LABEL_KEY[hazard])}</span>
+        </label>
+      ))}
+      {(draft.hazardFlags?.length ?? 0) > 0 && (
+        <div className="rounded-medium border border-warning p-4" role="alert">
+          <p className="font-semibold text-warning">
+            {t("safety_rabies_heading")}
+          </p>
+          <p className="text-text-muted">{t("safety_rabies_guidance")}</p>
+          <p className="text-text-muted">{t("safety_bite_guidance")}</p>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button
           type="button"
@@ -801,7 +850,11 @@ function Step7({
       <p className="text-text-muted">{draft.description}</p>
       <p className="text-text-muted">{draft.landmark}</p>
 
-      {error && <p className="text-critical">{error}</p>}
+      {error && (
+        <p role="alert" className="text-critical">
+          {error}
+        </p>
+      )}
 
       <div className="flex gap-2">
         <button

@@ -8,6 +8,7 @@ import {
   MediaPicker,
   RadioGroup,
   SafeAreaContainer,
+  SafetyCallout,
   Select,
   Stack,
   Text,
@@ -37,6 +38,7 @@ import {
 } from "../lib/processImage";
 
 type IncidentType = Database["public"]["Enums"]["incident_type"];
+type HazardType = Database["public"]["Enums"]["hazard_type"];
 type AnimalType = {
   id: string;
   slug: string;
@@ -86,6 +88,24 @@ const INCIDENT_LABEL_KEY: Record<IncidentType, TranslationKey> = {
   lost_animal_found: "incident_lost_animal_found",
   adoption_needed: "incident_adoption_needed",
   other_animal_welfare_concern: "incident_other_animal_welfare_concern",
+};
+
+const HAZARD_TYPES: HazardType[] = [
+  "traffic",
+  "violence",
+  "electrical",
+  "water",
+  "height",
+  "other",
+];
+
+const HAZARD_LABEL_KEY: Record<HazardType, TranslationKey> = {
+  traffic: "hazard_traffic",
+  violence: "hazard_violence",
+  electrical: "hazard_electrical",
+  water: "hazard_water",
+  height: "hazard_height",
+  other: "hazard_other",
 };
 
 type T = (
@@ -229,6 +249,7 @@ export default function ReportScreen() {
       upazilaOrThana: draft.upazilaOrThana,
       creatorOnSite: draft.creatorOnSite ?? false,
       lastSeenAt: draft.lastSeenAt,
+      hazardFlags: draft.hazardFlags ?? [],
     });
     if (!result.success) {
       setError(result.error.issues[0]?.message ?? t("form_required_field"));
@@ -463,6 +484,30 @@ export default function ReportScreen() {
               checked={draft.creatorOnSite ?? false}
               onChange={(checked) => persist({ creatorOnSite: checked })}
             />
+            <Text variant="titleMedium">{t("report_hazards_heading")}</Text>
+            {HAZARD_TYPES.map((hazard) => (
+              <Checkbox
+                key={hazard}
+                label={t(HAZARD_LABEL_KEY[hazard])}
+                checked={(draft.hazardFlags ?? []).includes(hazard)}
+                onChange={(checked) => {
+                  const current = new Set(draft.hazardFlags ?? []);
+                  if (checked) current.add(hazard);
+                  else current.delete(hazard);
+                  persist({ hazardFlags: Array.from(current) });
+                }}
+              />
+            ))}
+            {(draft.hazardFlags?.length ?? 0) > 0 && (
+              <SafetyCallout
+                tone="warning"
+                heading={t("safety_rabies_heading")}
+                instructions={[
+                  t("safety_rabies_guidance"),
+                  t("safety_bite_guidance"),
+                ]}
+              />
+            )}
             <Stack direction="row" gap="2">
               <Button variant="outline" onPress={() => goToStep(4)}>
                 {t("report_back")}
@@ -501,7 +546,11 @@ export default function ReportScreen() {
             </Text>
             <Text tone="muted">{draft.description}</Text>
             <Text tone="muted">{draft.landmark}</Text>
-            {error && <Text className="text-critical">{error}</Text>}
+            {error && (
+              <Text accessibilityRole="alert" className="text-critical">
+                {error}
+              </Text>
+            )}
             <Stack direction="row" gap="2">
               <Button variant="outline" onPress={() => goToStep(6)}>
                 {t("report_back")}

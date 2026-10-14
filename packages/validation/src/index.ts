@@ -21,6 +21,7 @@ export {
 export {
   incidentTypeSchema,
   urgencyLevelSchema,
+  hazardTypeSchema,
   caseLocationSchema,
   createCaseSchema,
   type CreateCaseInput,

@@ -49,6 +49,7 @@ export async function createCase(client: Client, input: CreateCaseInput) {
     p_upazila_or_thana: input.upazilaOrThana ?? null,
     p_creator_on_site: input.creatorOnSite,
     p_last_seen_at: input.lastSeenAt,
+    p_hazard_flags: input.hazardFlags,
   };
   return client.rpc(
     "create_case",

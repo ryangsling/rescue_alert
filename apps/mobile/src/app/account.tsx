@@ -171,7 +171,9 @@ export default function AccountScreen() {
                 secureTextEntry
               />
               {deleteError && (
-                <Text className="text-critical">{deleteError}</Text>
+                <Text accessibilityRole="alert" className="text-critical">
+                  {deleteError}
+                </Text>
               )}
               <Button
                 variant="destructive"

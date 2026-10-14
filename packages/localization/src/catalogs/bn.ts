@@ -273,4 +273,61 @@ export const bn: Record<keyof typeof en, string> = {
   report_reason_cruelty: "নির্যাতন",
   report_reason_privacy_exposure: "গোপনীয়তা প্রকাশ",
   report_reason_other: "অন্যান্য",
+
+  outcome_successfully_rescued: "সফলভাবে উদ্ধার করা হয়েছে",
+  outcome_treated_and_returned_safely:
+    "চিকিৎসা দিয়ে নিরাপদে ফিরিয়ে দেওয়া হয়েছে",
+  outcome_transferred_to_veterinary_care:
+    "পশু চিকিৎসার জন্য হস্তান্তর করা হয়েছে",
+  outcome_transferred_to_organization:
+    "একটি প্রাণী কল্যাণ সংস্থায় হস্তান্তর করা হয়েছে",
+  outcome_moved_to_temporary_foster: "সাময়িক ফস্টার কেয়ারে নেওয়া হয়েছে",
+  outcome_moved_to_shelter: "শেল্টারে নেওয়া হয়েছে",
+  outcome_adopted: "দত্তক নেওয়া হয়েছে",
+  outcome_recovered_without_intervention:
+    "হস্তক্ষেপ ছাড়াই প্রাণীটি সুস্থ হয়ে গেছে",
+  outcome_could_not_be_found: "প্রাণীটি খুঁজে পাওয়া যায়নি",
+  outcome_duplicate_report: "ডুপ্লিকেট রিপোর্ট",
+  outcome_report_inaccurate: "রিপোর্টটি সঠিক নয় বলে নির্ধারিত হয়েছে",
+  outcome_died_before_help_arrived: "সাহায্য পৌঁছানোর আগেই প্রাণীটি মারা গেছে",
+  outcome_died_during_or_after_treatment:
+    "চিকিৎসার সময় বা পরে প্রাণীটি মারা গেছে",
+  outcome_other_documented_outcome: "অন্য একটি লিপিবদ্ধ পরিণতি",
+
+  contribution_on_site_responder: "সরাসরি সাড়াদানকারী",
+  contribution_transport_volunteer: "পরিবহন স্বেচ্ছাসেবক",
+  contribution_foster_provider: "ফস্টার প্রদানকারী",
+  contribution_veterinary_support: "পশু চিকিৎসা সহায়তা",
+  contribution_case_coordinator: "কেস সমন্বয়কারী",
+  contribution_organization_responder: "সংস্থার সাড়াদানকারী",
+  contribution_adoption_facilitator: "দত্তক গ্রহণ সহায়ক",
+  contribution_moderator_contribution: "মডারেটরের অবদান",
+
+  case_close_action: "কেস বন্ধ করুন",
+  case_close_heading: "এই কেসটি বন্ধ করুন",
+  case_close_outcome_label: "পরিণতি কী হয়েছিল?",
+  case_close_outcome_required: "কেস বন্ধ করতে একটি পরিণতি নির্বাচন করুন",
+  case_close_final_update_label: "শেষ আপডেট",
+  case_close_final_update_required: "কেস বন্ধ করতে একটি শেষ আপডেট আবশ্যক",
+  case_close_contributions_heading: "কারা সাহায্য করেছেন তা নিশ্চিত করুন",
+  case_close_contributions_instructions:
+    "এই কেসে যারা আসলেই সাহায্য করেছেন তাদের কৃতিত্ব দিন।",
+  case_close_follow_up_heading: "এর জন্য কি একটি পরবর্তী কেস প্রয়োজন?",
+  case_close_follow_up_instructions:
+    "প্রাণীটির এখনও ফস্টার কেয়ার, চিকিৎসা, বা দত্তক গ্রহণের প্রয়োজন হলে একটি যুক্ত কেস তৈরি করুন।",
+  case_close_follow_up_create_action: "একটি পরবর্তী কেস তৈরি করুন",
+  case_close_follow_up_reference_label:
+    "পরবর্তী কেসের রেফারেন্স, যদি ইতিমধ্যে থাকে (ঐচ্ছিক)",
+  case_close_follow_up_not_found:
+    "এই রেফারেন্স দিয়ে কোনো কেস পাওয়া যায়নি। যাচাই করে আবার চেষ্টা করুন।",
+  case_close_review_heading: "কী সর্বজনীন হবে",
+  case_close_review_body:
+    "পরিণতি এবং শেষ আপডেট এই কেস আগে থেকে দেখতে পারা সবার কাছে দৃশ্যমান হবে। নির্দিষ্ট স্থানাঙ্ক এবং ফোন নম্বর কখনও দেখানো হয় না।",
+  case_close_submit: "কেস বন্ধ করুন",
+  case_already_closed_message: "এই কেসটি ইতিমধ্যে বন্ধ করা হয়েছে।",
+  case_reopen_action: "এই কেসটি পুনরায় চালু করুন",
+  case_reopen_reason_label: "কেন এটি পুনরায় চালু করা হচ্ছে?",
+  case_reopen_submit: "পুনরায় চালু করুন",
+  rescue_history_heading: "উদ্ধার ইতিহাস",
+  rescue_history_empty: "এখনও কোনো যাচাইকৃত অবদান নেই।",
 };

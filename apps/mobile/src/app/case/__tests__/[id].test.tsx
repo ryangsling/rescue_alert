@@ -48,6 +48,7 @@ jest.mock("../../../supabase-client", () => ({
 
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ id: "case-1" }),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
 
 // eslint-disable-next-line import/first

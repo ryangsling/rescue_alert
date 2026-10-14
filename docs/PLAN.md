@@ -521,34 +521,48 @@ Full case detail screens built on both apps (apps/mobile/src/app/case/[id].tsx, 
 
 ## Part 13 - Case closure, outcomes, and rescue history
 
-**Status:** Pending
+**Status:** Core closure, reopening, contribution crediting, and rescue history complete on both platforms and verified; closure media attachment and public (unauthenticated) rescue history pages remain open (see "Not done" below)
+
+Part 1 already had every table and enum this part needed (`rescue_outcomes`, `contributions`, the fourteen-value `closure_outcome` enum, and `transition_case_status()`'s full legal-transition graph including the moderator-gated `closed -> open` reopen edge) - no schema migration was needed, only new functions, a missing trigger, and one real security fix.
+
+**A real, pre-existing security bug was found and fixed while building this part**: `transition_case_status()` accepted a client-supplied `p_actor_id` with no check that it matched the real caller, and both `anon` and `authenticated` had `EXECUTE` on it in the live project (confirmed directly via `has_function_privilege`, not assumed). Any caller - anon included - could pass an arbitrary actor id (e.g. a moderator's) to satisfy the `requires_moderator` gate and to forge `case_status_history.actor_id`, impersonating someone else's action. Fixed by deriving the actor from `auth.uid()` and rejecting any mismatch, then revoking `anon`'s execute entirely; re-verified directly against the live project afterward. A mutation test (temporarily restoring the old function body) confirmed the new regression test actually catches this.
+
+A second real gap was found auditing `contributions`' existing bare RLS policy for this part: `contributions_insert` allowed a self-claim (`user_id = auth.uid()`) with no restriction at all on `verified_by`/`verified_at` in the same insert, so a user could mark their own contribution verified by themselves. PRD 13.2's confirmer list does not include self-confirmation. Fixed with a new trigger (`guard_contribution_verification`, the same layered RLS+trigger pattern already used for `case_responses` and `profiles`), also mutation-tested.
 
 ### Tasks
 
-- [ ] Structured closure sheet following DESIGN.md section 14.5 - outcome, final update, optional media, contribution confirmation, follow-up need, and a review of what becomes public
-- [ ] All fourteen closure outcomes from PRD section 9.3
-- [ ] Required final update for normal closure
-- [ ] Notifications and radius expansion stop on closure
-- [ ] Contribution crediting limited to selected categories, verified per PRD section 13.2
-- [ ] Moderator reopening of an incorrectly closed case
-- [ ] Linked follow-up cases for foster, treatment, or adoption needs
-- [ ] Rescue history on public profiles after privacy review, showing verified contributions without sensitive data
-- [ ] No confetti, no celebration during an unresolved rescue
+- [x] Structured closure sheet following DESIGN.md section 14.5 - outcome, final update, contribution confirmation, follow-up-case linking, and a static review of what becomes public, on both platforms (`apps/mobile/src/app/case/[id]/close.tsx`, `apps/web/src/app/case/[id]/close`). **Optional media on the final update is not built** - see "Not done" below.
+- [x] All fourteen closure outcomes from PRD section 9.3 - `OutcomeSelector` (fixed a pre-existing bug in passing: it hardcoded English labels directly in the component, violating this project's own "components receive resolved data" rule; now takes caller-supplied translated options, matching every other selector in the app)
+- [x] Required final update for normal closure - enforced in `close_case()` itself (`coalesce(trim(p_final_update), '') = ''` raises) and in the shared Zod schema
+- [x] Notifications and radius expansion stop on closure - no new code needed: Part 11's `case_needs_alerts()` already only matches `open`/`response_committed` cases, so transitioning to `closed` makes it false immediately, proven directly in `case_closure.test.sql`
+- [x] Contribution crediting limited to selected categories, verified per PRD section 13.2 - `close_case()` accepts a `p_contributions` array and inserts each as already-verified (the closer is themselves an authorized confirmer at that moment); an invalid credit (e.g. the closer naming themselves) is silently skipped rather than failing the whole closure
+- [x] Moderator reopening of an incorrectly closed case - no new function needed: the `closed -> open` transition already `requires_moderator` inside `transition_case_status()` itself, now that it can no longer be spoofed; wired into both case-detail screens as a reason field plus a button, shown only to moderators viewing a closed case
+- [x] Linked follow-up cases for foster, treatment, or adoption needs - deliberately simple: the closer creates the follow-up case separately through the existing report flow, then pastes its public reference into the close screen, which resolves it to an id via `findCaseIdByPublicReference()` and passes it as `p_follow_up_case_id`. Not built: automatically creating and pre-filling a follow-up case inline (would need to parse `approximate_location` client-side, which nothing in this project does yet)
+- [x] Rescue history on public profiles after privacy review, showing verified contributions without sensitive data - `get_user_rescue_history()` is deliberately callable by `anon` (same pattern as `rescue_cases_public()`), privacy-reviewed by construction (only `case_id`, `public_reference`, `category`, `outcome`, `case_title`, `closed_at` - never location or contact fields); wired into both apps' authenticated `/account` screen for now. **The actual public (signed-out) profile page is Part 16's job**, per this plan's own structure - not duplicated here.
+- [x] No confetti, no celebration during an unresolved rescue - true by construction; the closure screens use the same plain components (buttons, text areas, radio groups) as every other form in the app
 
 ### Tests
 
-- [ ] Closure without an outcome or final update is rejected
-- [ ] Notifications provably stop after closure
-- [ ] Contributions appear only after verification by an authorized confirmer
-- [ ] Reopening restores the case and preserves the full audit trail
-- [ ] Rescue history exposes no exact location or private contact detail
-- [ ] E2E: close a case with each of several outcomes and confirm the audit record
+- [x] Closure without an outcome or final update is rejected - `case_closure.test.sql` (empty final update) and the Zod schema/disabled-submit-button path on both screens
+- [x] Notifications provably stop after closure - `case_closure.test.sql`, asserting `case_needs_alerts()` directly
+- [x] Contributions appear only after verification by an authorized confirmer - `case_closure.test.sql`, including a mutation-tested self-verification rejection
+- [x] Reopening restores the case and preserves the full audit trail - `case_closure.test.sql` (non-moderator rejected, moderator succeeds, `case_status_history` row count checked)
+- [x] Rescue history exposes no exact location or private contact detail - true by construction (the function's own column list) and checked in `case_closure.test.sql`
+- [ ] E2E: close a case with each of several outcomes and confirm the audit record - deferred to Part 19, consistent with this plan's own structure
 
 ### Success criteria
 
-- [ ] PRD acceptance criterion 8 is demonstrably satisfied
-- [ ] Every status change records actor, timestamp, previous status, new status, and reason
-- [ ] No gamified celebration exists anywhere in the closure flow
+- [x] PRD acceptance criterion 8 is demonstrably satisfied - the SQL tests above are the proof
+- [x] Every status change records actor, timestamp, previous status, new status, and reason - already true since Part 1's `transition_case_status()`, now with a correct actor instead of a spoofable one
+- [x] No gamified celebration exists anywhere in the closure flow - true by construction
+
+### Not done, and needed before this part is fully closed
+
+1. Optional media attachment on the final closing update - DESIGN.md 14.5 lists it as a closure-sheet step; neither close screen has a photo picker, and `close_case()` itself has no media parameter.
+2. Automatic follow-up case creation (pre-filled from the original case's location/animal type) - the simpler "paste an existing reference" approach was built instead; see the task note above for why.
+3. The public, signed-out rescue-history page itself - the safe backing function (`get_user_rescue_history()`) exists and is already anon-callable, but the actual page is Part 16's "Public rescue history and open-case listing" task.
+4. Playwright/Maestro E2E for a full closure flow - deferred to Part 19 per the plan's own structure.
+5. Real-browser click-through of the actual closure/reopen/credit-contribution flow as a signed-in user - same disclosed limitation as Part 12: the live project currently has no seeded case and no confirmed test account to click through with. Covered today by: the SQL test suite (run against a real Postgres+PostGIS container, each new test mutation-tested), and typecheck/lint/full test suite/production build on both apps.
 
 ## Part 14 - Organizations, clinics, and directory
 

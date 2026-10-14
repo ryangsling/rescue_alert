@@ -52,6 +52,12 @@ export {
 } from "./report";
 export { containsPersonalContactInfo } from "./privacy";
 export {
+  closureOutcomeSchema,
+  contributionCategorySchema,
+  closeCaseSchema,
+  type CloseCaseInput,
+} from "./closure";
+export {
   buildMentionToken,
   splitMentionSegments,
   type MentionSegment,

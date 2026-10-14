@@ -10,5 +10,10 @@ export default async function AccountPage() {
     redirect("/sign-in");
   }
 
-  return <AccountSettings email={String(data.claims.email ?? "")} />;
+  return (
+    <AccountSettings
+      email={String(data.claims.email ?? "")}
+      userId={String(data.claims.sub ?? "")}
+    />
+  );
 }

@@ -278,6 +278,64 @@ export const en = {
   report_reason_cruelty: "Cruelty",
   report_reason_privacy_exposure: "Privacy exposure",
   report_reason_other: "Other",
+
+  // PRD section 9.3, in the order listed there.
+  outcome_successfully_rescued: "Successfully rescued",
+  outcome_treated_and_returned_safely: "Treated and returned safely",
+  outcome_transferred_to_veterinary_care: "Transferred to veterinary care",
+  outcome_transferred_to_organization:
+    "Transferred to an animal-welfare organization",
+  outcome_moved_to_temporary_foster: "Moved to temporary foster care",
+  outcome_moved_to_shelter: "Moved to shelter",
+  outcome_adopted: "Adopted",
+  outcome_recovered_without_intervention:
+    "Animal recovered without intervention",
+  outcome_could_not_be_found: "Animal could not be found",
+  outcome_duplicate_report: "Duplicate report",
+  outcome_report_inaccurate: "Report determined inaccurate",
+  outcome_died_before_help_arrived: "Animal died before help arrived",
+  outcome_died_during_or_after_treatment:
+    "Animal died during or after treatment",
+  outcome_other_documented_outcome: "Other documented outcome",
+
+  // PRD section 13.1, in the order listed there.
+  contribution_on_site_responder: "On-site responder",
+  contribution_transport_volunteer: "Transport volunteer",
+  contribution_foster_provider: "Foster provider",
+  contribution_veterinary_support: "Veterinary support",
+  contribution_case_coordinator: "Case coordinator",
+  contribution_organization_responder: "Organization responder",
+  contribution_adoption_facilitator: "Adoption facilitator",
+  contribution_moderator_contribution: "Moderator contribution",
+
+  case_close_action: "Close case",
+  case_close_heading: "Close this case",
+  case_close_outcome_label: "What was the outcome?",
+  case_close_outcome_required: "Select an outcome to close this case",
+  case_close_final_update_label: "Final update",
+  case_close_final_update_required:
+    "A final update is required to close a case",
+  case_close_contributions_heading: "Confirm who helped",
+  case_close_contributions_instructions:
+    "Credit the responders who actually helped with this case.",
+  case_close_follow_up_heading: "Does this need a follow-up case?",
+  case_close_follow_up_instructions:
+    "Create a linked case if the animal still needs foster care, treatment, or adoption.",
+  case_close_follow_up_create_action: "Create a follow-up case",
+  case_close_follow_up_reference_label:
+    "Follow-up case reference, if one already exists (optional)",
+  case_close_follow_up_not_found:
+    "No case was found with that reference. Check it and try again.",
+  case_close_review_heading: "What becomes public",
+  case_close_review_body:
+    "The outcome and final update become visible to everyone who can already see this case. Exact coordinates and phone numbers are never shown.",
+  case_close_submit: "Close case",
+  case_already_closed_message: "This case is already closed.",
+  case_reopen_action: "Reopen this case",
+  case_reopen_reason_label: "Why is this being reopened?",
+  case_reopen_submit: "Reopen",
+  rescue_history_heading: "Rescue history",
+  rescue_history_empty: "No verified contributions yet.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

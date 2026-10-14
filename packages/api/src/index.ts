@@ -16,6 +16,7 @@ export {
   getCaseMediaSignedUrl,
   getCaseExactLocation,
   listCaseMedia,
+  findCaseIdByPublicReference,
 } from "./case";
 export { listFeedCases, type FeedCase } from "./feed";
 export {
@@ -40,3 +41,4 @@ export { createContentReport } from "./report";
 export { listCaseNeeds, addCaseNeed, removeCaseNeed } from "./needs";
 export { watchCase, unwatchCase, isWatchingCase } from "./watcher";
 export { getProfileNames } from "./profile";
+export { closeCase, reopenCase, getUserRescueHistory } from "./closure";

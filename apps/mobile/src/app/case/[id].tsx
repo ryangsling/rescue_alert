@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Linking, ScrollView } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { buildExternalNavigationUrls } from "@rescue-alert/maps";
 import {
@@ -21,6 +21,7 @@ import {
   Stack,
   Text,
   TextArea,
+  TextField,
   Timeline,
   WithdrawDialog,
   type MediaItem,
@@ -53,6 +54,7 @@ import {
   getCaseExactLocation,
   getCaseMediaSignedUrl,
   uploadCaseMedia,
+  reopenCase,
 } from "@rescue-alert/api";
 import {
   containsPersonalContactInfo,
@@ -189,6 +191,7 @@ type ComposerTarget = "comment" | { replyTo: string } | null;
  */
 export default function CaseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { locale } = useLocale();
   const t = (key: TranslationKey, params?: Record<string, string | number>) =>
     translate(locale, key, params);
@@ -244,6 +247,7 @@ export default function CaseDetailScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [reopenReason, setReopenReason] = useState("");
 
   const isCoordinatorLike = isCreator || isCoordinator || isModerator;
   const isCaseClosed = caseRow ? CLOSED_STATUSES.has(caseRow.status) : false;
@@ -562,6 +566,13 @@ export default function CaseDetailScreen() {
     setIsWatching(!isWatching);
   }
 
+  async function handleReopen() {
+    if (!id || !userId) return;
+    await reopenCase(supabase, userId, id, reopenReason.trim() || undefined);
+    setReopenReason("");
+    await loadAll();
+  }
+
   async function handleSubmitReport(reason: string, details: string) {
     if (!userId || !reportTarget) return;
     await createContentReport(supabase, userId, {
@@ -661,6 +672,28 @@ export default function CaseDetailScreen() {
 
         {isCaseClosed ? (
           <Banner tone="neutral" message={t("case_detail_closed_notice")} />
+        ) : null}
+
+        {isCoordinatorLike && !isCaseClosed ? (
+          <Button
+            variant="outline"
+            onPress={() => router.push(`/case/${id}/close`)}
+          >
+            {t("case_close_action")}
+          </Button>
+        ) : null}
+
+        {isModerator && isCaseClosed ? (
+          <Stack gap="2">
+            <TextField
+              label={t("case_reopen_reason_label")}
+              value={reopenReason}
+              onChangeText={setReopenReason}
+            />
+            <Button variant="outline" onPress={handleReopen}>
+              {t("case_reopen_action")}
+            </Button>
+          </Stack>
         ) : null}
 
         <Text variant="bodyMedium">{caseRow.description}</Text>

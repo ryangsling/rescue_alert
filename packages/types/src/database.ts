@@ -1630,6 +1630,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      can_confirm_contribution: {
+        Args: { p_case_id: string };
+        Returns: boolean;
+      };
       case_audience: {
         Args: { p_actor: string; p_case_id: string };
         Returns: {
@@ -1654,6 +1658,31 @@ export type Database = {
           delivery_id: string;
           expo_ticket_id: string;
         }[];
+      };
+      close_case: {
+        Args: {
+          p_case_id: string;
+          p_contributions?: Json;
+          p_final_update: string;
+          p_follow_up_case_id?: string;
+          p_outcome: Database["public"]["Enums"]["closure_outcome"];
+          p_reason?: string;
+        };
+        Returns: {
+          case_id: string;
+          created_at: string;
+          final_update: string;
+          follow_up_case_id: string | null;
+          id: string;
+          outcome: Database["public"]["Enums"]["closure_outcome"];
+          recorded_by: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "rescue_outcomes";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       complete_onboarding: {
         Args: {
@@ -1773,6 +1802,17 @@ export type Database = {
         }[];
       };
       get_responder_phone: { Args: { p_response_id: string }; Returns: string };
+      get_user_rescue_history: {
+        Args: { p_user_id: string };
+        Returns: {
+          case_id: string;
+          case_title: string;
+          category: Database["public"]["Enums"]["contribution_category"];
+          closed_at: string;
+          outcome: Database["public"]["Enums"]["closure_outcome"];
+          public_reference: string;
+        }[];
+      };
       incident_type_label_en: {
         Args: { p_incident_type: Database["public"]["Enums"]["incident_type"] };
         Returns: string;

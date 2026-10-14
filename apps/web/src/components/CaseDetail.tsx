@@ -28,7 +28,9 @@ import {
   listCaseMedia,
   uploadCaseMedia,
   getCaseMediaSignedUrl,
+  reopenCase,
 } from "@rescue-alert/api";
+import Link from "next/link";
 import {
   containsPersonalContactInfo,
   buildMentionToken,
@@ -193,6 +195,7 @@ export function CaseDetail({ caseId }: { caseId: string }) {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [reopenReason, setReopenReason] = useState("");
 
   const [composerBody, setComposerBody] = useState("");
   const [composerTarget, setComposerTarget] = useState<ComposerTarget>(null);
@@ -507,6 +510,18 @@ export function CaseDetail({ caseId }: { caseId: string }) {
     setIsWatching(!isWatching);
   }
 
+  async function handleReopen() {
+    if (!userId) return;
+    await reopenCase(
+      supabase,
+      userId,
+      caseId,
+      reopenReason.trim() || undefined,
+    );
+    setReopenReason("");
+    await loadAll();
+  }
+
   async function handleSaveEdit() {
     if (!editingTarget || !editBody.trim()) return;
     if (editingTarget.type === "comment") {
@@ -586,6 +601,35 @@ export function CaseDetail({ caseId }: { caseId: string }) {
         <p className="rounded-md bg-neutral-container px-3 py-2 text-neutral">
           {t("case_detail_closed_notice")}
         </p>
+      ) : null}
+
+      {isCoordinatorLike && !isCaseClosed ? (
+        <Link
+          href={`/case/${caseId}/close`}
+          className="min-h-11 self-start rounded-full border border-border px-4 py-2 text-text"
+        >
+          {t("case_close_action")}
+        </Link>
+      ) : null}
+
+      {isModerator && isCaseClosed ? (
+        <div className="flex flex-col gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-text">{t("case_reopen_reason_label")}</span>
+            <input
+              value={reopenReason}
+              onChange={(event) => setReopenReason(event.target.value)}
+              className="min-h-11 rounded-md border border-border bg-surface px-4 text-text"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleReopen}
+            className="min-h-11 self-start rounded-full border border-border px-4 py-2 text-text"
+          >
+            {t("case_reopen_action")}
+          </button>
+        </div>
       ) : null}
 
       <p className="text-text">{caseRow.description}</p>

@@ -137,6 +137,18 @@ export async function uploadCaseMedia(
   return { data, error: error ? { message: error.message } : null };
 }
 
+/** Part 13: resolves a public_reference (e.g. "RA-ABCD1234") to a case id, for linking an already-created follow-up case at closure. */
+export async function findCaseIdByPublicReference(
+  client: Client,
+  publicReference: string,
+) {
+  return client
+    .from("rescue_cases")
+    .select("id")
+    .eq("public_reference", publicReference.trim())
+    .maybeSingle();
+}
+
 /** Part 12: every media row for a case, oldest first - the case detail screen's media gallery and each update's own attachments. */
 export async function listCaseMedia(client: Client, caseId: string) {
   return client

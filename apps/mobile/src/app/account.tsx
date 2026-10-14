@@ -10,6 +10,7 @@ import {
 } from "@rescue-alert/ui";
 import {
   getEdgeFunctionErrorCode,
+  getUserRescueHistory,
   requestAccountDeletion,
   signOutAllDevices,
   signOutCurrentDevice,
@@ -19,7 +20,25 @@ import {
   useLocale,
   type TranslationKey,
 } from "@rescue-alert/localization";
+import type { Database } from "@rescue-alert/types";
 import { supabase } from "../supabase-client";
+
+type RescueHistoryRow =
+  Database["public"]["Functions"]["get_user_rescue_history"]["Returns"][number];
+
+const CONTRIBUTION_LABEL_KEY: Record<
+  RescueHistoryRow["category"],
+  TranslationKey
+> = {
+  on_site_responder: "contribution_on_site_responder",
+  transport_volunteer: "contribution_transport_volunteer",
+  foster_provider: "contribution_foster_provider",
+  veterinary_support: "contribution_veterinary_support",
+  case_coordinator: "contribution_case_coordinator",
+  organization_responder: "contribution_organization_responder",
+  adoption_facilitator: "contribution_adoption_facilitator",
+  moderator_contribution: "contribution_moderator_contribution",
+};
 
 export default function AccountScreen() {
   const { locale } = useLocale();
@@ -27,6 +46,7 @@ export default function AccountScreen() {
   const router = useRouter();
 
   const [email, setEmail] = useState<string | null>(null);
+  const [rescueHistory, setRescueHistory] = useState<RescueHistoryRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -40,6 +60,11 @@ export default function AccountScreen() {
         return;
       }
       setEmail(data.user.email ?? "");
+      const { data: history } = await getUserRescueHistory(
+        supabase,
+        data.user.id,
+      );
+      setRescueHistory(history ?? []);
     }
     void loadUser();
   }, [router]);
@@ -89,6 +114,29 @@ export default function AccountScreen() {
       <Stack gap="6" className="flex-1 p-6">
         <Text variant="heading1">{t("account_settings_heading")}</Text>
         <Text tone="muted">{email}</Text>
+
+        <Stack gap="2">
+          <Text variant="titleMedium">{t("rescue_history_heading")}</Text>
+          {rescueHistory.length === 0 ? (
+            <Text tone="muted">{t("rescue_history_empty")}</Text>
+          ) : (
+            rescueHistory.map((row) => (
+              <Stack
+                key={`${row.case_id}-${row.category}`}
+                gap="1"
+                className="rounded-medium border border-border p-3"
+              >
+                <Text className="font-semibold">{row.case_title}</Text>
+                <Text tone="muted">
+                  {t(CONTRIBUTION_LABEL_KEY[row.category])}
+                </Text>
+                <Text variant="caption" tone="muted">
+                  {new Date(row.closed_at).toLocaleDateString(locale)}
+                </Text>
+              </Stack>
+            ))
+          )}
+        </Stack>
 
         <Button variant="outline" loading={busy} onPress={handleSignOut}>
           {t("account_sign_out")}

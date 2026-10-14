@@ -5,6 +5,7 @@ const mockGetUser = jest.fn();
 jest.mock("../../supabase-client", () => ({
   supabase: {
     auth: { getUser: () => mockGetUser() },
+    rpc: () => Promise.resolve({ data: [], error: null }),
   },
 }));
 jest.mock("expo-router", () => ({
@@ -25,7 +26,7 @@ const memoryStorage: LocaleStorage = {
 describe("AccountScreen", () => {
   it("shows the signed-in user's email once loaded", async () => {
     mockGetUser.mockResolvedValue({
-      data: { user: { email: "test@example.com" } },
+      data: { user: { id: "user-1", email: "test@example.com" } },
     });
 
     render(

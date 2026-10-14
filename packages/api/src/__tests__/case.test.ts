@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@rescue-alert/types";
 import {
   createCase,
+  findCaseIdByPublicReference,
   findNearbyDuplicateCases,
   getCaseExactLocation,
   getCaseMediaSignedUrl,
@@ -188,6 +189,22 @@ describe("getCaseMediaSignedUrl", () => {
 
     expect(createSignedUrl).toHaveBeenCalledWith("case-1/media-1.jpg", 120);
     expect(result).toEqual({ data: { signedUrl: "https://x" }, error: null });
+  });
+});
+
+describe("findCaseIdByPublicReference", () => {
+  it("filters by trimmed public_reference", async () => {
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { id: "case-1" }, error: null });
+    const eq = vi.fn(() => ({ maybeSingle }));
+    const select = vi.fn(() => ({ eq }));
+    const client = {
+      from: vi.fn(() => ({ select })),
+    } as unknown as SupabaseClient<Database>;
+
+    await findCaseIdByPublicReference(client, "  RA-ABCD1234  ");
+    expect(eq).toHaveBeenCalledWith("public_reference", "RA-ABCD1234");
   });
 });
 

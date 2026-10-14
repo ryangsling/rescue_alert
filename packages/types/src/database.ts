@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5";
+    PostgrestVersion: "14.17";
   };
   public: {
     Tables: {
@@ -647,8 +647,71 @@ export type Database = {
           },
         ];
       };
+      foster_placement_requests: {
+        Row: {
+          case_id: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          foster_profile_id: string;
+          id: string;
+          requested_by: string;
+          status: Database["public"]["Enums"]["placement_request_status"];
+        };
+        Insert: {
+          case_id: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          foster_profile_id: string;
+          id?: string;
+          requested_by: string;
+          status?: Database["public"]["Enums"]["placement_request_status"];
+        };
+        Update: {
+          case_id?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          foster_profile_id?: string;
+          id?: string;
+          requested_by?: string;
+          status?: Database["public"]["Enums"]["placement_request_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "foster_placement_requests_case_id_fkey";
+            columns: ["case_id"];
+            isOneToOne: false;
+            referencedRelation: "rescue_cases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "foster_placement_requests_decided_by_fkey";
+            columns: ["decided_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "foster_placement_requests_foster_profile_id_fkey";
+            columns: ["foster_profile_id"];
+            isOneToOne: false;
+            referencedRelation: "foster_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "foster_placement_requests_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       foster_profiles: {
         Row: {
+          address: string | null;
           area: string | null;
           available_from: string | null;
           available_until: string | null;
@@ -661,6 +724,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          address?: string | null;
           area?: string | null;
           available_from?: string | null;
           available_until?: string | null;
@@ -673,6 +737,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          address?: string | null;
           area?: string | null;
           available_from?: string | null;
           available_until?: string | null;
@@ -1012,6 +1077,7 @@ export type Database = {
         Row: {
           contact_method: string | null;
           created_at: string;
+          created_by: string | null;
           description: string | null;
           id: string;
           last_confirmed_at: string;
@@ -1026,6 +1092,7 @@ export type Database = {
         Insert: {
           contact_method?: string | null;
           created_at?: string;
+          created_by?: string | null;
           description?: string | null;
           id?: string;
           last_confirmed_at?: string;
@@ -1040,6 +1107,7 @@ export type Database = {
         Update: {
           contact_method?: string | null;
           created_at?: string;
+          created_by?: string | null;
           description?: string | null;
           id?: string;
           last_confirmed_at?: string;
@@ -1052,6 +1120,13 @@ export type Database = {
           verified_by?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "organizations_verified_by_fkey";
             columns: ["verified_by"];
@@ -1692,6 +1767,30 @@ export type Database = {
         };
         Returns: undefined;
       };
+      confirm_organization_listing: {
+        Args: { p_organization_id: string };
+        Returns: {
+          contact_method: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          last_confirmed_at: string;
+          name: string;
+          org_type: Database["public"]["Enums"]["organization_type"];
+          service_area: string | null;
+          updated_at: string;
+          verification_status: Database["public"]["Enums"]["verification_status"];
+          verified_at: string | null;
+          verified_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "organizations";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       create_case: {
         Args: {
           p_animal_type_id: string;
@@ -1782,6 +1881,12 @@ export type Database = {
           urgency: Database["public"]["Enums"]["urgency_level"];
         }[];
       };
+      find_org_alert_candidates: {
+        Args: { p_case_id: string };
+        Returns: {
+          user_id: string;
+        }[];
+      };
       generate_public_reference: { Args: never; Returns: string };
       get_case_exact_location: {
         Args: { p_case_id: string };
@@ -1800,6 +1905,10 @@ export type Database = {
           landmark: string;
           location: unknown;
         }[];
+      };
+      get_foster_address: {
+        Args: { p_foster_profile_id: string };
+        Returns: string;
       };
       get_responder_phone: { Args: { p_response_id: string }; Returns: string };
       get_user_rescue_history: {
@@ -1871,7 +1980,30 @@ export type Database = {
           urgency: Database["public"]["Enums"]["urgency_level"];
         }[];
       };
+      list_verified_directory: {
+        Args: never;
+        Returns: {
+          clinic_emergency_capable: boolean;
+          clinic_specializations: string;
+          contact_method: string;
+          description: string;
+          hours_text: string;
+          id: string;
+          is_currently_available: boolean;
+          last_confirmed_at: string;
+          name: string;
+          org_type: Database["public"]["Enums"]["organization_type"];
+          service_area: string;
+          services: Json;
+          shelter_capacity_available: number;
+          shelter_capacity_total: number;
+        }[];
+      };
       notification_case_payload: { Args: { p_case_id: string }; Returns: Json };
+      organization_member_count: {
+        Args: { p_org_id: string };
+        Returns: number;
+      };
       queue_notification_deliveries: { Args: never; Returns: number };
       record_delivery_results: {
         Args: { p_results: Json };
@@ -2052,7 +2184,8 @@ export type Database = {
         | "case_status_changed"
         | "case_closed"
         | "follow_up_requested"
-        | "moderation_or_account";
+        | "moderation_or_account"
+        | "organization_alert";
       organization_member_role: "member" | "administrator";
       organization_type:
         | "clinic"
@@ -2060,6 +2193,8 @@ export type Database = {
         | "ngo"
         | "rescue_group"
         | "individual_coordinator";
+      placement_request_status:
+        "pending" | "approved" | "declined" | "withdrawn";
       report_reason:
         | "spam"
         | "duplicate"
@@ -2333,6 +2468,7 @@ export const Constants = {
         "case_closed",
         "follow_up_requested",
         "moderation_or_account",
+        "organization_alert",
       ],
       organization_member_role: ["member", "administrator"],
       organization_type: [
@@ -2341,6 +2477,12 @@ export const Constants = {
         "ngo",
         "rescue_group",
         "individual_coordinator",
+      ],
+      placement_request_status: [
+        "pending",
+        "approved",
+        "declined",
+        "withdrawn",
       ],
       report_reason: [
         "spam",

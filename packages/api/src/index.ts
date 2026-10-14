@@ -42,3 +42,28 @@ export { listCaseNeeds, addCaseNeed, removeCaseNeed } from "./needs";
 export { watchCase, unwatchCase, isWatchingCase } from "./watcher";
 export { getProfileNames } from "./profile";
 export { closeCase, reopenCase, getUserRescueHistory } from "./closure";
+export {
+  createOrganization,
+  updateOrganization,
+  confirmOrganizationListing,
+  listMyOrganizations,
+  listOrganizationMembers,
+  addOrganizationMember,
+  removeOrganizationMember,
+  upsertOrganizationService,
+  removeOrganizationService,
+  listOrganizationServices,
+  setOrganizationAvailability,
+  getOrganizationAvailability,
+  listVerifiedDirectory,
+  createFosterProfile,
+  updateFosterProfile,
+  getMyFosterProfile,
+  listActiveFosterProfiles,
+  createPlacementRequest,
+  withdrawPlacementRequest,
+  respondToPlacementRequest,
+  listPlacementRequestsForFoster,
+  listPlacementRequestsForCase,
+  getFosterAddress,
+} from "./organization";

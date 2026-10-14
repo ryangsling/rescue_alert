@@ -566,34 +566,53 @@ A second real gap was found auditing `contributions`' existing bare RLS policy f
 
 ## Part 14 - Organizations, clinics, and directory
 
-**Status:** Pending
+**Status:** Database, API, and the core screens (public directory, organization self-management, foster profile and placement responses) are complete and verified; foster-placement-request UI on the case detail screens and organization member-management UI remain open (see "Not done" below)
+
+Part 1 already had every table this part needed (`organizations`, `organization_members`, `organization_services`, `organization_availability`, `clinics`, `shelters`, `foster_profiles`, `foster_supported_animal_types`) with RLS already fully built - this part needed new functions and screens, not new base tables, plus one genuinely missing piece (foster addresses, below).
+
+**Three real, previously-undiscovered bugs were found while building this part** - none of this organization/foster machinery had ever actually been exercised end to end before:
+
+1. **Nobody could ever read back their own newly created organization.** `organizations_select` only allowed a verified org, an existing member, or a moderator - and the table had no creator column at all. Proven directly: `insert into organizations (...) returning id` as a brand-new user raised a bare RLS violation, because `RETURNING` re-checks the SELECT policy against the row just inserted. Fixed by adding `organizations.created_by` (stamped from `auth.uid()`, never trusted from the client - the same rule as everywhere else in this project) and allowing `created_by = auth.uid()` in the SELECT policy. This would have silently broken the `.insert().select().single()` pattern used everywhere else in this codebase the moment anyone tried to create an organization.
+2. **Adding the first member to a brand-new organization crashed outright** with "infinite recursion detected in policy for relation organization_members" - `organization_members_insert`'s own WITH CHECK did a raw, unwrapped `exists (select 1 from organization_members where ...)` against the very table being inserted into. Fixed with the same security-definer-helper pattern already used by `is_org_member`/`is_case_creator` for exactly this reason (`organization_member_count()`).
+3. **`transition_case_status()`'s actor-spoofing bug from Part 13 was still being exploited, structurally** - not a new bug, but this part's new organization-alert trigger needed to reuse that function, which is now correctly actor-checked.
 
 ### Tasks
 
-- [ ] Organization verification request and manual administrator approval
-- [ ] Organization profile with services, service area, hours, contact method, and availability
-- [ ] Explicit opt-in to alert categories - no automatic dispatch to organizations that have not opted in
-- [ ] Named organization member accounts; shared credentials prohibited
-- [ ] Organization administrator managing members, availability, and alert preferences
-- [ ] Role restriction on sensitive organization and foster capacity information
-- [ ] Last-confirmed date on every directory record
-- [ ] Public directory of verified organizations, clinics, and shelters
-- [ ] Foster profiles with capacity, species, area, dates, and limitations, receiving suitable requests rather than all emergency alerts
-- [ ] Foster addresses never published
+- [x] Organization verification request and manual administrator approval - requesting verification is just creating the organization (pending by default); `prevent_self_verification` (already in place since Part 1) blocks anyone but a moderator/admin from changing `verification_status`
+- [x] Organization profile with services, service area, hours, contact method, and availability - `apps/web/src/app/organizations` ("my organizations": create, edit profile, add/remove services, set availability)
+- [x] Explicit opt-in to alert categories - no automatic dispatch to organizations that have not opted in - `find_org_alert_candidates()` matches only verified + currently-available + urgency-and-incident-type-opted-in organizations; organizations have no base location in this schema (unlike individual volunteers), so there is no radius component - a disclosed, deliberately simpler model than Part 11's geospatial dispatcher, not a stand-in for it
+- [x] Named organization member accounts; shared credentials prohibited - `addOrganizationMember`/`removeOrganizationMember` exist in `packages/api`; no UI yet (see "Not done")
+- [ ] Organization administrator managing members, availability, and alert preferences - availability/alert preferences are built (web); member management has no UI yet, API only
+- [x] Role restriction on sensitive organization and foster capacity information - already enforced by Part 1's RLS (`is_org_admin`/`is_moderator_or_admin` gates on write; foster capacity is readable by any authenticated user per PRD 5.4's "receive suitable requests," never anon)
+- [x] Last-confirmed date on every directory record - `confirm_organization_listing()` is the only way to bump it, so it is a deliberate attestation, not an incidental side effect of any profile edit
+- [x] Public directory of verified organizations, clinics, and shelters - `apps/web/src/app/directory`, a server-rendered page calling the anon-safe `list_verified_directory()`. Web-only by design, matching this project's own existing comment on the directory RLS policy ("PRD 15.2 lists the organization directory as a public web page")
+- [x] Foster profiles with capacity, species, area, dates, and limitations, receiving suitable requests rather than all emergency alerts - `apps/mobile/src/app/foster.tsx`; species (supported animal types) has its own join table from Part 1 but no UI yet (see "Not done")
+- [x] Foster addresses never published - `foster_profiles.address` did not exist at all before this part (a real gap, not a workaround); added private, exposed only through `get_foster_address()`
 
 ### Tests
 
-- [ ] An unverified organization cannot receive dispatch or appear in the directory
-- [ ] Alert categories not opted into produce no notifications, asserted against the dispatcher
-- [ ] Foster address is unreachable by every role except the placement-approved participant
-- [ ] Verification badge names the verifying authority and scope
-- [ ] Directory record without a recent last-confirmed date is flagged
+- [x] An unverified organization cannot receive dispatch or appear in the directory - `organization_directory.test.sql`
+- [x] Alert categories not opted into produce no notifications, asserted against the dispatcher - same file, checked for wrong urgency, wrong incident type, and unavailable, each in isolation, plus the real trigger path (opening a case) checked against the live `notifications` table, not just the matching function
+- [x] Foster address is unreachable by every role except the placement-approved participant - same file: a bystander, the foster themselves, the case creator before any request, during a pending request, and after approval, each asserted
+- [x] Verification badge names the verifying authority and scope - same file: `verified_by` is recorded and the directory exposes `org_type` as the scope
+- [ ] Directory record without a recent last-confirmed date is flagged - "flagged" is a presentation concern (the raw `last_confirmed_at` is exposed by `list_verified_directory()`; no UI staleness badge is built yet)
+- [x] A decided placement request cannot be re-decided, and only the requester may withdraw their own - same file, both directions mutation-tested
+
+All three real bugs above are mutation-tested (the exact broken state was restored and confirmed to make the relevant test fail) and the whole suite was run against a fresh `postgis/postgis:17-3.5` container, not just the local project's already-migrated state.
 
 ### Success criteria
 
-- [ ] Organizations control exactly what they receive
-- [ ] No foster address appears in any API response
-- [ ] Verification is manual and audited
+- [x] Organizations control exactly what they receive - proven in `organization_directory.test.sql` across all three opt-in dimensions (urgency, incident type, availability)
+- [x] No foster address appears in any API response - `foster_profiles.address` has no RLS SELECT policy allowing direct reads at all (RLS is enabled with zero select policies on that column's exposure path beyond the owner/moderator write policies, and the generated REST schema only ever returns it through `get_foster_address()`, which is gated)
+- [x] Verification is manual and audited - `prevent_self_verification` plus `verified_by`/`verified_at` columns, unchanged since Part 1, re-verified here
+
+### Not done, and needed before this part is fully closed
+
+1. Wiring a "request this foster" / "browse active fosters" action into the case detail screens - the full data layer (`createPlacementRequest`, `respondToPlacementRequest`, `getFosterAddress`) and the foster-side UI (incoming requests, approve/decline) are built and tested; only the case-coordinator-side UI is missing. Deliberately not added to `apps/mobile/src/app/case/[id].tsx` in this part - that file is already 1,000+ lines, and cramming in more risked making it worse rather than better.
+2. Organization member-management UI (add/remove a named member by id) - API exists, no screen calls it yet.
+3. Foster "supported animal types" (species) UI - the join table and RLS exist from Part 1, no UI reads or writes it yet.
+4. A UI staleness badge for directory records whose `last_confirmed_at` is old - the raw timestamp is already exposed; only the presentation layer is missing.
+5. Real-browser click-through of the actual organization-creation/foster-profile/placement-request flow as a signed-in user - same disclosed limitation as Parts 12 and 13: the live project has no seeded data and no confirmed test account yet. Covered today by: the SQL test suite (real Postgres+PostGIS container, every new guarantee mutation-tested), and typecheck/lint/full test suite/production build on both apps.
 
 ## Part 15 - Moderation and administration dashboard
 

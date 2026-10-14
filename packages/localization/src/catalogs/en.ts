@@ -524,8 +524,10 @@ export const en = {
   hazard_other: "Other hazard",
   case_hazards_heading: "Hazards noted at the scene",
   safety_response_callout_heading: "Before you go on-site",
-  safety_relocation_heading: "A healthy community animal doesn't always need to move",
-  safety_relocation_guidance: "A healthy, unowned community animal is often better left where it is, fed and monitored, than relocated. Move an animal only when there is a lawful, welfare-based reason - an injury, immediate danger, or a planned foster/shelter/adoption placement - not simply because it is unowned.",
+  safety_relocation_heading:
+    "A healthy community animal doesn't always need to move",
+  safety_relocation_guidance:
+    "A healthy, unowned community animal is often better left where it is, fed and monitored, than relocated. Move an animal only when there is a lawful, welfare-based reason - an injury, immediate danger, or a planned foster/shelter/adoption placement - not simply because it is unowned.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

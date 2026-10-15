@@ -1,0 +1,36 @@
+# MVP acceptance criteria walkthrough (PRD section 28)
+
+Status recorded against each of the seventeen criteria, with the real evidence behind each call - not a checklist filled in by assumption. Three honest ratings are used: **Pass** (built and tested, evidence cited), **Partial** (built, but something specific about verification or scope is missing - stated exactly), and **Not verified** (exists in code but has never been exercised against something real, e.g. a device).
+
+| # | Criterion | Status | Evidence / gap |
+|---|---|---|---|
+| 1 | Register, verify email, sign in, recover password, delete account | Pass | Built Part 7, covered by `packages/validation`/`packages/api` auth tests and SQL RLS tests. Email verification and recovery use Supabase's built-in SMTP (kept, per the developer's choice in this session - rate limit accepted as a pilot-scale risk). |
+| 2 | Create a complete rescue case using GPS or manual location | Pass | `create_case()` (Part 1/8), exercised by the SQL suite and the mobile report wizard's RNTL tests. Manual-location fallback (LocationField) works independently of GPS permission, per its own test. |
+| 3 | A report survives network interruption without silent data loss | Pass | Offline drafts are real SQLite (mobile) / IndexedDB (web) persistence, not in-memory (Part 8/18); a failed photo upload is retried via a tracked queue, never silently dropped (Part 18); idempotency keys prevent a retried submit from creating a duplicate case (SQL-tested in `idempotency_and_transitions.test.sql`). |
+| 4 | A nearby eligible volunteer can receive and open a push notification | **Not verified** | Server-side matching/dispatch is live on a production `pg_cron` schedule (Part 11). Client-side registration, the volunteer's alert-area setting, and tap-to-open deep links are built and unit-tested (Part 20, commit `ce287f4`) - but no real push has ever reached a real device; this sandbox has none. iOS is additionally blocked on Apple Developer enrollment (PAUSE 2, deferred by developer choice). |
+| 5 | The volunteer can commit to a specific assistance type | Pass | Part 12 `case_responses`/assistance types, SQL- and unit-tested. |
+| 6 | Multiple volunteers can coordinate without overwriting each other | Pass | A partial unique index enforces one live commitment per responder; a needs-board sync trigger keeps `case_needs` consistent automatically, including reopening a need if a confirmed response is later declined (Part 12). Mutation-tested. |
+| 7 | The reporter or authorized coordinator can post official updates | Pass | `case_updates`, author-restricted, visually distinct from comments (Part 12). |
+| 8 | A case can be closed with a structured outcome and audit history | Pass | `close_case()` (Part 13): structured outcome, final update, contribution verification in one atomic call; every status change is recorded in `case_status_history` regardless of path. |
+| 9 | Exact sensitive locations and private phone numbers are not exposed publicly | Pass | See `docs/privacy-model.md`. `get_case_exact_location()`/`get_responder_phone()`/`get_foster_address()` all gate on specific authorization, never a blanket signed-in check; public share pages are served by separate functions that never select these fields at all. |
+| 10 | Moderators can review reports, merge duplicates, restrict accounts, and audit actions | Pass | Full Part 15 dashboard; see `docs/moderation-policy.md`. Not covered: an E2E walkthrough of the moderator UI itself (no seeded moderator test account on the live project for Playwright to use). |
+| 11 | Public share pages exclude sensitive data | Pass | Part 16; `supabase/tests/public_sharing.test.sql` plus real Playwright E2E against the live project (Part 19) confirming the pages actually render and a nonexistent case returns a genuine 404. |
+| 12 | Core flows function in বাংলা and English | Partial | Every UI string goes through the shared catalogs, and CI fails if a key exists in one language and not the other (AGENTS.md standard 7, enforced, not just stated). **Not done:** no native-speaker UX review of the বাংলা copy has been performed - translations were written directly, not reviewed by a third party. See `docs/bangla-terminology-guide.md`'s own guidance on this. |
+| 13 | Row Level Security tests pass for all exposed tables | Partial | 36 of 39 RLS-enabled tables have explicit test coverage (Part 19 audit). Three (`achievements`, `user_achievements`, `volunteer_capabilities`) were judged lower-risk - simple shapes already proven correct elsewhere - and left untested as a disclosed judgment call, not an oversight. |
+| 14 | Map attribution is visible and provider policies are followed | Pass | Part 9; OpenFreeMap attribution wording signed off, no API key required. |
+| 15 | Safety and emergency disclaimers are visible in relevant flows | Pass | Part 17; the four PRD 12.5 disclaimers confirmed wired since an earlier part, hazard flags and `SafetyCallout` wired into the report flow and case detail in Part 17 itself. |
+| 16 | Notification deduplication and radius-stop conditions are verified | Pass | Part 11's own SQL tests (`notifications.test.sql`) prove this directly: a partial unique index prevents double-insertion, and expansion is shown stopping on both commitment and closure, each via mutation testing. |
+| 17 | The system has a documented incident, moderation, and data-recovery procedure | Partial | `docs/incident-response.md` and `docs/moderation-policy.md` exist and are specific (not generic boilerplate). **The data-recovery procedure's own backup mechanism is not yet confirmed working** - the GitHub Actions `pg_dump` workflow (Part 20) depends on a `SUPABASE_DB_URL` secret that has not yet been successfully set, and no restore drill has been run. The document is real; the thing it describes is not yet proven. |
+
+## Summary
+
+**11 of 17 pass outright. 5 are partial** (12, 13, 17, plus the backup-dependent half of 4's blockers) **with the specific gap named, not hidden. 1 is explicitly not verified** (criterion 4, the single most central feature, blocked purely on the absence of a real device/push in this sandbox - not on missing code).
+
+Before a closed pilot actually opens, the team should, in priority order:
+
+1. Get the `SUPABASE_DB_URL` secret set and prove a restore drill actually works (criterion 17's open half).
+2. Register at least one real device and confirm a real push notification arrives and opens the correct case (criterion 4) - this requires the EAS development build the developer will produce when ready for store/testing-track work.
+3. Have a fluent বাংলা speaker review the catalog before volunteers see it in the field (criterion 12).
+4. Decide whether the three untested lower-risk RLS tables (criterion 13) are worth closing before launch or are an acceptable residual risk for a small pilot.
+
+No criterion above was marked "Pass" without a specific artifact or test file backing it - where that evidence doesn't exist yet, it says so.

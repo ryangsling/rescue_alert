@@ -161,6 +161,9 @@ export const en = {
   // PRD 10.5, DESIGN.md 14.2 nearby feed.
   feed_heading: "Nearby cases",
   feed_recently_viewed_heading: "Recently viewed",
+  nav_report_action: "Report a rescue",
+  nav_account_action: "Account",
+  nav_foster_action: "Foster",
   feed_search_placeholder: "Search by keyword",
   feed_filter_animal_type: "Animal type",
   feed_filter_all_animals: "All animals",

@@ -41,3 +41,8 @@ coverage/
 
 # Playwright MCP scratch output
 .playwright-mcp/
+
+# Playwright E2E run artifacts (Part 19)
+test-results/
+playwright-report/
+blob-report/

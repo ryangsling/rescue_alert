@@ -1,7 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@rescue-alert/types";
-import { addCaseNeed, removeCaseNeed } from "../needs";
+import { listCaseNeeds, addCaseNeed, removeCaseNeed } from "../needs";
+
+describe("listCaseNeeds", () => {
+  it("queries case_needs for the given case, oldest first", async () => {
+    const order = vi.fn().mockResolvedValue({ data: [], error: null });
+    const eq = vi.fn(() => ({ order }));
+    const select = vi.fn(() => ({ eq }));
+    const from = vi.fn(() => ({ select }));
+    const client = { from } as unknown as SupabaseClient<Database>;
+
+    await listCaseNeeds(client, "case-1");
+    expect(from).toHaveBeenCalledWith("case_needs");
+    expect(eq).toHaveBeenCalledWith("case_id", "case-1");
+  });
+});
 
 describe("addCaseNeed", () => {
   it("inserts a case_id/need_type row", async () => {

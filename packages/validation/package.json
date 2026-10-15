@@ -9,7 +9,8 @@
     "build": "echo \"@rescue-alert/validation: nothing to build yet\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@rescue-alert/types": "workspace:*",

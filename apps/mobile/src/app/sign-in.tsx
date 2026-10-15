@@ -54,6 +54,7 @@ export default function SignInScreen() {
         <Text variant="heading1">{t("auth_sign_in_heading")}</Text>
 
         <TextField
+          testID="email-input"
           label={t("auth_email_label")}
           value={email}
           onChangeText={setEmail}
@@ -61,6 +62,7 @@ export default function SignInScreen() {
           autoCapitalize="none"
         />
         <TextField
+          testID="password-input"
           label={t("auth_password_label")}
           value={password}
           onChangeText={setPassword}
@@ -73,7 +75,12 @@ export default function SignInScreen() {
           </Text>
         )}
 
-        <Button variant="primary" loading={submitting} onPress={handleSubmit}>
+        <Button
+          testID="sign-in-submit-button"
+          variant="primary"
+          loading={submitting}
+          onPress={handleSubmit}
+        >
           {t("auth_sign_in_heading")}
         </Button>
 

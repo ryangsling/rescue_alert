@@ -1,0 +1,18 @@
+# Part 19: mobile E2E (Maestro). Authored, NOT executed in this
+# session - no simulator/device/Maestro CLI is available in this
+# sandbox. Covers only the first step of the report wizard
+# (incident type + urgency selection, advancing to the photo step) -
+# the same assertion this session's RNTL test for ReportScreen
+# already verifies in isolation; this flow exists to prove the same
+# behaviour holds in a real app, not to re-author the whole 7-step
+# flow as a device script.
+appId: com.rescuealert.app
+---
+- launchApp
+- runFlow: sign-in.yaml
+- tapOn: "Report a rescue"
+- assertVisible: "What happened?"
+- tapOn: "Injured animal"
+- tapOn: "Critical"
+- tapOn: "Continue"
+- assertVisible: "Add a photo"

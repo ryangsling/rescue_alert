@@ -159,6 +159,9 @@ export const bn: Record<keyof typeof en, string> = {
 
   feed_heading: "কাছাকাছি কেসসমূহ",
   feed_recently_viewed_heading: "সম্প্রতি দেখা হয়েছে",
+  nav_report_action: "একটি উদ্ধার রিপোর্ট করুন",
+  nav_account_action: "অ্যাকাউন্ট",
+  nav_foster_action: "ফস্টার",
   feed_search_placeholder: "কিওয়ার্ড দিয়ে খুঁজুন",
   feed_filter_animal_type: "প্রাণীর ধরন",
   feed_filter_all_animals: "সব প্রাণী",

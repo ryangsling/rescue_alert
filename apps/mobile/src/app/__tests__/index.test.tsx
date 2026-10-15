@@ -1,5 +1,5 @@
 import { View as MockView } from "react-native";
-import { act, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { LocaleProvider, type LocaleStorage } from "@rescue-alert/localization";
 
 // This file's first-compile cost is heavier than a typical mobile
@@ -53,6 +53,11 @@ jest.mock("../../supabase-client", () => ({
     }),
     removeChannel: () => Promise.resolve("ok"),
   },
+}));
+
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({
+  useRouter: () => ({ push: mockPush }),
 }));
 
 // eslint-disable-next-line import/first
@@ -134,5 +139,30 @@ describe("Home (nearby feed)", () => {
     });
 
     expect(screen.getByText("Injured dog near the market")).toBeTruthy();
+  });
+
+  // Part 19 finding: nothing in this app linked to /report, /account,
+  // or /foster before this part - this is the minimal reachability
+  // fix, asserted directly rather than assumed.
+  it("links to report, account, and foster, which were previously unreachable from this screen", async () => {
+    render(
+      <LocaleProvider storage={memoryStorage}>
+        <Home />
+      </LocaleProvider>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.press(screen.getByText("Report a rescue"));
+    expect(mockPush).toHaveBeenCalledWith("/report");
+
+    fireEvent.press(screen.getByText("Account"));
+    expect(mockPush).toHaveBeenCalledWith("/account");
+
+    fireEvent.press(screen.getByText("Foster"));
+    expect(mockPush).toHaveBeenCalledWith("/foster");
   });
 });

@@ -38,6 +38,9 @@ jobs:
       - name: Test
         run: pnpm turbo run test
 
+      - name: Test coverage (logic packages gated at 80%, apps reported only)
+        run: pnpm turbo run test:coverage
+
       - name: Build
         run: pnpm turbo run build
         env:
@@ -52,6 +55,15 @@ jobs:
           # is why apps/web's build never needed this.
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Install Playwright browser
+        run: pnpm --filter @rescue-alert/web exec playwright install --with-deps chromium
+
+      - name: Web E2E (public pages only - Part 19)
+        run: pnpm --filter @rescue-alert/web test:e2e
+        env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
 

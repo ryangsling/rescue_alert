@@ -1,0 +1,22 @@
+# Part 19: mobile E2E (Maestro). Authored, NOT executed in this
+# session - no simulator/device/Maestro CLI is available in this
+# sandbox (same disclosed limitation as every other manual-device item
+# in docs/PLAN.md). Run with `maestro test .maestro/sign-in.yaml`
+# against a real simulator/device with a seeded test account once one
+# exists. testIDs referenced here (email-input, password-input,
+# sign-in-submit-button) were added to apps/mobile/src/app/sign-in.tsx
+# specifically so this flow has real selectors to target, not guessed
+# ones.
+appId: com.rescuealert.app
+---
+- launchApp
+- assertVisible: "Sign in"
+- tapOn:
+    id: "email-input"
+- inputText: "test-pilot@example.com"
+- tapOn:
+    id: "password-input"
+- inputText: "replace-with-real-test-password"
+- tapOn:
+    id: "sign-in-submit-button"
+- assertVisible: "Nearby cases"

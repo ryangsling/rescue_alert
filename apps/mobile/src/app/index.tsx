@@ -328,6 +328,23 @@ export default function Home() {
           </Button>
         </Stack>
 
+        {/* Part 19 finding: nothing in this app linked to /report,
+            /account, or /foster at all - DESIGN.md 13.1's bottom tab
+            bar and "My activity" screen were never built either; this
+            is the minimal fix (reachability), not that full spec -
+            see docs/PLAN.md Part 19 for the disclosed remainder. */}
+        <Stack direction="row" gap="2">
+          <Button variant="primary" onPress={() => router.push("/report")}>
+            {t("nav_report_action")}
+          </Button>
+          <Button variant="outline" onPress={() => router.push("/account")}>
+            {t("nav_account_action")}
+          </Button>
+          <Button variant="outline" onPress={() => router.push("/foster")}>
+            {t("nav_foster_action")}
+          </Button>
+        </Stack>
+
         {recentlyViewed.length > 0 && (
           <Stack gap="1">
             <Text variant="titleMedium">

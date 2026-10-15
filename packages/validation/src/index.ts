@@ -108,3 +108,11 @@ export {
   animalTypeSchema,
   type AnimalTypeInput,
 } from "./moderation";
+export {
+  updateNotificationPreferencesSchema,
+  type UpdateNotificationPreferencesInput,
+  expoPushTokenSchema,
+  devicePlatformSchema,
+  registerDeviceSchema,
+  type RegisterDeviceInput,
+} from "./notification-preferences";

@@ -12,3 +12,5 @@ minimumReleaseAgeExclude:
   - "@supabase/realtime-js@2.117.0"
   - "@supabase/storage-js@2.117.0"
   - "@supabase/supabase-js@2.117.0"
+  - expo-constants@57.0.22
+  - expo-notifications@57.0.23

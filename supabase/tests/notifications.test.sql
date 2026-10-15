@@ -381,3 +381,41 @@ begin
     'exact coordinate must not influence who is matched';
   assert exists (select 1 from find_alert_candidates(v_case, 5) where user_id = v_edge);
 end $$;
+
+-- 12. update_my_notification_preferences: the only client-reachable
+-- path that can ever set base_location (owner-only RLS already
+-- allows the write; this just marshals the geography value). Covers a
+-- first-time set (no existing row), an update of an existing row, a
+-- rejected radius, and that anon cannot call it.
+do $$
+declare
+  v_p uuid := pg_temp.uid('creator');
+begin
+  assert not has_function_privilege('anon', 'update_my_notification_preferences(geography,numeric)', 'execute');
+
+  delete from notification_preferences where user_id = v_p;
+  perform set_config('request.jwt.claim.sub', v_p::text, true);
+  set local role authenticated;
+  perform update_my_notification_preferences(st_setsrid(st_makepoint(90.4, 23.8), 4326)::geography, 3);
+  reset role;
+  assert (select alert_radius_km from notification_preferences where user_id = v_p) = 3,
+    'first-time set must insert a row';
+  assert (select st_x(base_location::geometry) from notification_preferences where user_id = v_p) = 90.4;
+
+  perform set_config('request.jwt.claim.sub', v_p::text, true);
+  set local role authenticated;
+  perform update_my_notification_preferences(st_setsrid(st_makepoint(91.0, 24.0), 4326)::geography, 8);
+  reset role;
+  assert (select alert_radius_km from notification_preferences where user_id = v_p) = 8,
+    'a second call must update the existing row, not insert another';
+  assert (select count(*) from notification_preferences where user_id = v_p) = 1;
+
+  perform set_config('request.jwt.claim.sub', v_p::text, true);
+  set local role authenticated;
+  begin
+    perform update_my_notification_preferences(st_setsrid(st_makepoint(91.0, 24.0), 4326)::geography, 0);
+    assert false, 'a non-positive radius must be rejected';
+  exception when others then null;
+  end;
+  reset role;
+end $$;

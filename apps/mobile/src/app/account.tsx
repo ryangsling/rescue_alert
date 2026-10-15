@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
+import * as Location from "expo-location";
 import {
   Button,
   LoadingState,
@@ -14,7 +15,9 @@ import {
   requestAccountDeletion,
   signOutAllDevices,
   signOutCurrentDevice,
+  updateNotificationPreferences,
 } from "@rescue-alert/api";
+import { updateNotificationPreferencesSchema } from "@rescue-alert/validation";
 import {
   translate,
   useLocale,
@@ -22,6 +25,7 @@ import {
 } from "@rescue-alert/localization";
 import type { Database } from "@rescue-alert/types";
 import { supabase } from "../supabase-client";
+import { unregisterPushNotifications } from "../push-notifications";
 
 type RescueHistoryRow =
   Database["public"]["Functions"]["get_user_rescue_history"]["Returns"][number];
@@ -52,6 +56,16 @@ export default function AccountScreen() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
+  const [hasAlertArea, setHasAlertArea] = useState(false);
+  const [alertRadiusKm, setAlertRadiusKm] = useState("5");
+  const [pendingLocation, setPendingLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [alertAreaStatus, setAlertAreaStatus] = useState<
+    "idle" | "locating" | "saving" | "saved" | "error"
+  >("idle");
+
   useEffect(() => {
     async function loadUser() {
       const { data } = await supabase.auth.getUser();
@@ -60,6 +74,17 @@ export default function AccountScreen() {
         return;
       }
       setEmail(data.user.email ?? "");
+
+      const { data: prefs } = await supabase
+        .from("notification_preferences")
+        .select("alert_radius_km, base_location")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+      if (prefs) {
+        setHasAlertArea(prefs.base_location !== null);
+        setAlertRadiusKm(String(prefs.alert_radius_km));
+      }
+
       const { data: history } = await getUserRescueHistory(
         supabase,
         data.user.id,
@@ -68,6 +93,50 @@ export default function AccountScreen() {
     }
     void loadUser();
   }, [router]);
+
+  async function handleUseCurrentLocationForAlerts() {
+    setAlertAreaStatus("locating");
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setAlertAreaStatus("error");
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({});
+      setPendingLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+      setAlertAreaStatus("idle");
+    } catch {
+      setAlertAreaStatus("error");
+    }
+  }
+
+  async function handleSaveAlertArea() {
+    if (!pendingLocation) return;
+    const result = updateNotificationPreferencesSchema.safeParse({
+      baseLocation: pendingLocation,
+      alertRadiusKm: Number(alertRadiusKm),
+    });
+    if (!result.success) {
+      setAlertAreaStatus("error");
+      return;
+    }
+
+    setAlertAreaStatus("saving");
+    const { error } = await updateNotificationPreferences(
+      supabase,
+      result.data,
+    );
+    if (error) {
+      setAlertAreaStatus("error");
+      return;
+    }
+    setHasAlertArea(true);
+    setPendingLocation(null);
+    setAlertAreaStatus("saved");
+  }
 
   async function handleSignOut() {
     setBusy(true);
@@ -79,6 +148,7 @@ export default function AccountScreen() {
   async function handleSignOutAllDevices() {
     setBusy(true);
     await signOutAllDevices(supabase);
+    await unregisterPushNotifications();
     setBusy(false);
     router.replace("/sign-in");
   }
@@ -87,6 +157,8 @@ export default function AccountScreen() {
     setDeleteError(null);
     setBusy(true);
     const { error } = await requestAccountDeletion(supabase, deletePassword);
+
+    if (!error) await unregisterPushNotifications();
     setBusy(false);
 
     if (error) {
@@ -136,6 +208,53 @@ export default function AccountScreen() {
               </Stack>
             ))
           )}
+        </Stack>
+
+        <Stack gap="2" className="rounded-medium border border-border p-4">
+          <Text variant="titleMedium">{t("account_alert_area_heading")}</Text>
+          <Text tone="muted" variant="caption">
+            {t("account_alert_area_help")}
+          </Text>
+          <Text>
+            {hasAlertArea
+              ? t("account_alert_area_set")
+              : t("account_alert_area_not_set")}
+          </Text>
+
+          <Button
+            variant="outline"
+            loading={alertAreaStatus === "locating"}
+            onPress={handleUseCurrentLocationForAlerts}
+          >
+            {t("account_alert_area_use_location")}
+          </Button>
+
+          <TextField
+            label={t("account_alert_radius_label")}
+            value={alertRadiusKm}
+            onChangeText={setAlertRadiusKm}
+            keyboardType="numeric"
+          />
+
+          {alertAreaStatus === "error" && (
+            <Text accessibilityRole="alert" className="text-critical">
+              {t("account_alert_area_error")}
+            </Text>
+          )}
+          {alertAreaStatus === "saved" && (
+            <Text className="text-success">
+              {t("account_alert_area_saved")}
+            </Text>
+          )}
+
+          <Button
+            variant="primary"
+            loading={alertAreaStatus === "saving"}
+            disabled={!pendingLocation}
+            onPress={handleSaveAlertArea}
+          >
+            {t("account_alert_area_save")}
+          </Button>
         </Stack>
 
         <Button variant="outline" loading={busy} onPress={handleSignOut}>

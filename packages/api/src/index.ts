@@ -98,3 +98,8 @@ export {
   listPublicRescueHistory,
   getPublicMediaSignedUrl,
 } from "./public";
+export {
+  updateNotificationPreferences,
+  registerDevice,
+  unregisterDevice,
+} from "./notification-preferences";

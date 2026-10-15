@@ -100,6 +100,17 @@ export const bn: Record<keyof typeof en, string> = {
   account_settings_heading: "অ্যাকাউন্ট",
   account_sign_out: "সাইন আউট",
   account_sign_out_all_devices: "সব ডিভাইস থেকে সাইন আউট করুন",
+  account_alert_area_heading: "সতর্কতা এলাকা",
+  account_alert_area_help:
+    "আশপাশের উদ্ধার সতর্কতা এই বিন্দু ও ব্যাসার্ধের সঙ্গে মেলানো হয়। এটি আপনার বেছে নেওয়া একটি স্থির বিন্দু, কখনো লাইভ ট্র্যাক করা হয় না।",
+  account_alert_area_set: "সতর্কতা এলাকা নির্ধারিত হয়েছে",
+  account_alert_area_not_set: "এখনো কোনো সতর্কতা এলাকা নির্ধারণ করা হয়নি",
+  account_alert_area_use_location: "আমার বর্তমান অবস্থান ব্যবহার করুন",
+  account_alert_radius_label: "সতর্কতার ব্যাসার্ধ (কিমি)",
+  account_alert_area_save: "সতর্কতা এলাকা সংরক্ষণ করুন",
+  account_alert_area_saved: "সতর্কতা এলাকা সংরক্ষিত হয়েছে",
+  account_alert_area_error:
+    "আপনার সতর্কতা এলাকা সংরক্ষণ করা যায়নি। কিছু পরিবর্তন হয়নি - আবার চেষ্টা করুন।",
   account_delete_heading: "অ্যাকাউন্ট মুছুন",
   account_delete_warning:
     "এটি পূর্বাবস্থায় ফেরানো যাবে না। নিশ্চিত করতে আপনার পাসওয়ার্ড দিন।",

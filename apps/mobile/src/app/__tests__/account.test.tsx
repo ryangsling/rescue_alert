@@ -6,6 +6,13 @@ jest.mock("../../supabase-client", () => ({
   supabase: {
     auth: { getUser: () => mockGetUser() },
     rpc: () => Promise.resolve({ data: [], error: null }),
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        }),
+      }),
+    }),
   },
 }));
 jest.mock("expo-router", () => ({
@@ -39,5 +46,21 @@ describe("AccountScreen", () => {
       expect(screen.getByText("test@example.com")).toBeTruthy(),
     );
     expect(screen.getByText("Account")).toBeTruthy();
+  });
+
+  it("shows no alert area set when notification_preferences has none", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "user-1", email: "test@example.com" } },
+    });
+
+    render(
+      <LocaleProvider storage={memoryStorage}>
+        <AccountScreen />
+      </LocaleProvider>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("No alert area set yet")).toBeTruthy(),
+    );
   });
 });

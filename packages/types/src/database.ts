@@ -2235,6 +2235,10 @@ export type Database = {
         Args: { p_expo_push_token: string };
         Returns: undefined;
       };
+      update_my_notification_preferences: {
+        Args: { p_alert_radius_km: number; p_base_location: unknown };
+        Returns: undefined;
+      };
     };
     Enums: {
       account_restriction_type:

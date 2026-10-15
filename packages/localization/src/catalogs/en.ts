@@ -101,6 +101,17 @@ export const en = {
   account_settings_heading: "Account",
   account_sign_out: "Sign out",
   account_sign_out_all_devices: "Sign out of all devices",
+  account_alert_area_heading: "Alert area",
+  account_alert_area_help:
+    "Nearby rescue alerts are matched against this point and radius. It is a static point you choose, never tracked live.",
+  account_alert_area_set: "Alert area set",
+  account_alert_area_not_set: "No alert area set yet",
+  account_alert_area_use_location: "Use my current location",
+  account_alert_radius_label: "Alert radius (km)",
+  account_alert_area_save: "Save alert area",
+  account_alert_area_saved: "Alert area saved",
+  account_alert_area_error:
+    "Could not save your alert area. Nothing changed - try again.",
   account_delete_heading: "Delete account",
   account_delete_warning:
     "This cannot be undone. Enter your password to confirm.",

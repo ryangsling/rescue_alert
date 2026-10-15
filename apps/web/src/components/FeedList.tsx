@@ -22,7 +22,7 @@ type AnimalType = {
 const PAGE_SIZE = 20;
 
 export function FeedList({ animalTypes }: { animalTypes: AnimalType[] }) {
-  const { locale, setLocale } = useLocale();
+  const { locale } = useLocale();
   const t = (
     key: Parameters<typeof translate>[1],
     params?: Record<string, string | number>,
@@ -186,16 +186,7 @@ export function FeedList({ animalTypes }: { animalTypes: AnimalType[] }) {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text">{t("feed_heading")}</h1>
-        <button
-          type="button"
-          onClick={() => setLocale(locale === "en" ? "bn" : "en")}
-          className="rounded-full border border-border px-4 py-2 text-text"
-        >
-          {locale === "en" ? "বাংলা" : "English"}
-        </button>
-      </div>
+      <h1 className="text-2xl font-bold text-text">{t("feed_heading")}</h1>
 
       <div className="flex flex-col gap-2">
         <input

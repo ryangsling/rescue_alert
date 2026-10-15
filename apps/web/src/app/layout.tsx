@@ -4,6 +4,7 @@ import type { PropsWithChildren } from "react";
 import "./globals.css";
 import { ThemeVars } from "./theme-vars";
 import { AppLocaleProvider } from "./locale-provider";
+import { AppHeader } from "./app-header";
 
 // next/font self-hosts at build time - no runtime request to Google,
 // matching DESIGN.md section 6.1's "do not depend on downloading
@@ -33,7 +34,10 @@ export default function RootLayout({ children }: PropsWithChildren) {
         <ThemeVars />
       </head>
       <body className="min-h-full font-sans antialiased">
-        <AppLocaleProvider>{children}</AppLocaleProvider>
+        <AppLocaleProvider>
+          <AppHeader />
+          {children}
+        </AppLocaleProvider>
       </body>
     </html>
   );

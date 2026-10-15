@@ -25,10 +25,24 @@ done
 status=0
 
 echo "Checking for raw hex colours outside packages/design-tokens..."
-if grep -rEn "${exclude_args[@]}" \
+# app.config.ts is Expo's native platform config (app icon, splash
+# screen, Android notification-channel colour) - evaluated by Node/EAS
+# build tooling before any app bundle or design-token import graph
+# exists, and Expo's own config plugins require these as literal hex
+# strings. Same category as packages/design-tokens itself, not feature
+# code the rule is meant to police.
+#
+# Filtered out below rather than passed as a grep --exclude pattern:
+# proven directly that GNU grep 3.11 silently ignores --exclude when
+# --include is also given on a recursive directory search (it only
+# applies when there is no --include) - the file would otherwise have
+# leaked through unexcluded despite the flag being present.
+hex_matches="$(grep -rEn "${exclude_args[@]}" \
   --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.css' \
   '#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3}([0-9A-Fa-f]{2})?)?\b' \
-  "${SOURCE_GLOBS[@]}" 2>/dev/null; then
+  "${SOURCE_GLOBS[@]}" 2>/dev/null | grep -v '/app\.config\.ts:' || true)"
+if [[ -n "$hex_matches" ]]; then
+  echo "$hex_matches"
   echo "Raw hex colours found above. Reference a design token instead."
   status=1
 else

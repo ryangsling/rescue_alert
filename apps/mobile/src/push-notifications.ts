@@ -4,7 +4,11 @@ import { useRouter } from "expo-router";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-import { registerDevice, unregisterDevice } from "@rescue-alert/api";
+import {
+  recordAnalyticsEvent,
+  registerDevice,
+  unregisterDevice,
+} from "@rescue-alert/api";
 import { supabase } from "./supabase-client";
 
 Notifications.setNotificationHandler({
@@ -45,6 +49,9 @@ export async function registerForPushNotifications(): Promise<void> {
   let status = existing;
   if (status !== "granted") {
     status = (await Notifications.requestPermissionsAsync()).status;
+    void recordAnalyticsEvent(supabase, "notification_permission_result", {
+      status,
+    });
   }
   if (status !== "granted") return;
 

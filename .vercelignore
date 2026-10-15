@@ -1,0 +1,9 @@
+.turbo
+coverage
+dist
+build
+.expo
+.git
+apps/mobile/android
+apps/mobile/ios
+supabase/tests

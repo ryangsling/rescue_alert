@@ -21,6 +21,7 @@ import type { MediaItem } from "@rescue-alert/ui";
 import {
   createCase,
   findNearbyDuplicateCases,
+  recordAnalyticsEvent,
   uploadCaseMedia,
 } from "@rescue-alert/api";
 import { createCaseSchema } from "@rescue-alert/validation";
@@ -280,10 +281,14 @@ export default function ReportScreen() {
       setCreatedCase(newCase);
       setFailedPhotoUris(failed);
       setPhotoUploadError(t("photo_upload_error"));
+      void recordAnalyticsEvent(supabase, "report_upload_failed");
       return;
     }
 
     await draftStore.delete(draft.idempotencyKey);
+    void recordAnalyticsEvent(supabase, "report_submitted", {
+      incidentType: draft.incidentType ?? null,
+    });
     setSubmittedReference(newCase.public_reference);
   }
 

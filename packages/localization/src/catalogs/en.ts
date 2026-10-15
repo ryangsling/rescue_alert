@@ -415,12 +415,21 @@ export const en = {
   placement_request_sent: "Placement request sent",
 
   moderation_dashboard_heading: "Moderation",
+  moderation_nav_operations: "Operations",
   moderation_nav_queue: "Critical queue",
   moderation_nav_reports: "Reports",
   moderation_nav_restrictions: "Accounts",
   moderation_nav_appeals: "Appeals",
   moderation_nav_audit_log: "Audit log",
   moderation_nav_settings: "Configuration",
+  ops_signal_active_cases: "Active cases",
+  ops_signal_unanswered_critical: "Unanswered critical cases",
+  ops_signal_notification_failures: "Notification failures (24h)",
+  ops_signal_upload_failures: "Upload failures (24h)",
+  ops_signal_open_reports: "Open moderation reports",
+  ops_signal_report_volume: "New reports (24h)",
+  ops_signals_disclosure:
+    "Database and function errors are not shown here - that needs a log drain, not yet configured. Report volume is a raw count for you to judge, not an automated spike alert.",
 
   moderation_critical_queue_heading: "Active critical and urgent cases",
   moderation_unanswered_only_toggle: "Unanswered only",

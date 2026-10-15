@@ -103,3 +103,7 @@ export {
   registerDevice,
   unregisterDevice,
 } from "./notification-preferences";
+export {
+  recordAnalyticsEvent,
+  getOperationalDashboardSignals,
+} from "./analytics";

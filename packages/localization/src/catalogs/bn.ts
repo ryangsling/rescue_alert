@@ -410,12 +410,21 @@ export const bn: Record<keyof typeof en, string> = {
   placement_request_sent: "স্থাপনের অনুরোধ পাঠানো হয়েছে",
 
   moderation_dashboard_heading: "মডারেশন",
+  moderation_nav_operations: "কার্যক্রম",
   moderation_nav_queue: "জরুরি সারি",
   moderation_nav_reports: "রিপোর্ট",
   moderation_nav_restrictions: "অ্যাকাউন্ট",
   moderation_nav_appeals: "আপিল",
   moderation_nav_audit_log: "অডিট লগ",
   moderation_nav_settings: "কনফিগারেশন",
+  ops_signal_active_cases: "সক্রিয় কেস",
+  ops_signal_unanswered_critical: "অনুত্তরিত সংকটাপন্ন কেস",
+  ops_signal_notification_failures: "নোটিফিকেশন ব্যর্থতা (২৪ ঘণ্টা)",
+  ops_signal_upload_failures: "আপলোড ব্যর্থতা (২৪ ঘণ্টা)",
+  ops_signal_open_reports: "খোলা মডারেশন রিপোর্ট",
+  ops_signal_report_volume: "নতুন রিপোর্ট (২৪ ঘণ্টা)",
+  ops_signals_disclosure:
+    "ডাটাবেস ও ফাংশন ত্রুটি এখানে দেখানো হয় না - এর জন্য লগ ড্রেইন প্রয়োজন, যা এখনো কনফিগার করা হয়নি। রিপোর্টের পরিমাণ একটি কাঁচা সংখ্যা যা আপনাকে বিচার করতে হবে, এটি স্বয়ংক্রিয় স্পাইক সতর্কতা নয়।",
 
   moderation_critical_queue_heading: "সক্রিয় সংকটাপন্ন ও জরুরি কেস",
   moderation_unanswered_only_toggle: "শুধু অনুত্তরিত",

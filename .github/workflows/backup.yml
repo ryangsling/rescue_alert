@@ -1,0 +1,54 @@
+name: Database backup
+
+# Supabase's free tier (what this project is on) has no automatic
+# backups at all - daily backups only exist on Pro and above
+# (confirmed directly against Supabase's docs in Part 20). This is the
+# replacement: a scheduled logical dump kept as a workflow artifact.
+#
+# Runs against the Session Pooler connection (port 5432), not the
+# direct connection - GitHub-hosted runners have no outbound IPv6, and
+# the free-tier direct connection (db.<ref>.supabase.co:5432) is
+# IPv6-only without the paid IPv4 add-on. SUPABASE_DB_URL must be the
+# full Session Pooler URI (from the dashboard's Connect button) with
+# the real password filled in, not a bare password.
+
+on:
+  schedule:
+    # 03:00 UTC daily (~09:00 Asia/Dhaka) - outside typical pilot
+    # activity hours, same rationale as the quiet-hours design (Part 11).
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    # Matches the live project's Postgres major version (17) exactly -
+    # the runner image's default postgresql-client is not guaranteed
+    # to match, and pg_dump against a newer server than the client
+    # understands can fail outright rather than just warn.
+    container:
+      image: postgres:17-alpine
+    steps:
+      - name: Dump database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "SUPABASE_DB_URL is not set - see docs/incident-response.md section 3." >&2
+            exit 1
+          fi
+          pg_dump "$SUPABASE_DB_URL" \
+            --no-owner --no-privileges --format=plain \
+            --file=backup.sql
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: backup.sql
+          # Free-tier Actions storage is finite; 30 days matches a
+          # reasonable pilot recovery window without accumulating
+          # dumps indefinitely. Revisit if the pilot's own data
+          # retention policy (docs/privacy-model.md, PRD open
+          # question 10) is ever formally set.
+          retention-days: 30

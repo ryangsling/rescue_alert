@@ -28,9 +28,12 @@ jest.mock("expo-constants", () => ({
 
 const mockRegisterDevice = jest.fn();
 const mockUnregisterDevice = jest.fn();
+const mockRecordAnalyticsEvent = jest.fn();
 jest.mock("@rescue-alert/api", () => ({
   registerDevice: (...args: unknown[]) => mockRegisterDevice(...args),
   unregisterDevice: (...args: unknown[]) => mockUnregisterDevice(...args),
+  recordAnalyticsEvent: (...args: unknown[]) =>
+    mockRecordAnalyticsEvent(...args),
 }));
 
 jest.mock("../supabase-client", () => ({ supabase: {} }));
@@ -53,11 +56,16 @@ describe("registerForPushNotifications", () => {
     expect(mockRegisterDevice).not.toHaveBeenCalled();
   });
 
-  it("does nothing when permission is denied", async () => {
+  it("does nothing when permission is denied, but records the result", async () => {
     mockGetPermissionsAsync.mockResolvedValue({ status: "denied" });
     mockRequestPermissionsAsync.mockResolvedValue({ status: "denied" });
     await registerForPushNotifications();
     expect(mockRegisterDevice).not.toHaveBeenCalled();
+    expect(mockRecordAnalyticsEvent).toHaveBeenCalledWith(
+      {},
+      "notification_permission_result",
+      { status: "denied" },
+    );
   });
 
   it("registers the device once permission is granted", async () => {
@@ -69,6 +77,11 @@ describe("registerForPushNotifications", () => {
 
     await registerForPushNotifications();
 
+    expect(mockRecordAnalyticsEvent).toHaveBeenCalledWith(
+      {},
+      "notification_permission_result",
+      { status: "granted" },
+    );
     expect(mockRegisterDevice).toHaveBeenCalledWith(
       {},
       { expoPushToken: "ExponentPushToken[abc]", platform: "ios" },

@@ -120,6 +120,38 @@ export type Database = {
         };
         Relationships: [];
       };
+      analytics_events: {
+        Row: {
+          created_at: string;
+          event_name: Database["public"]["Enums"]["analytics_event_name"];
+          id: string;
+          properties: Json;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          event_name: Database["public"]["Enums"]["analytics_event_name"];
+          id?: string;
+          properties?: Json;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          event_name?: Database["public"]["Enums"]["analytics_event_name"];
+          id?: string;
+          properties?: Json;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       animal_types: {
         Row: {
           created_at: string;
@@ -1987,6 +2019,17 @@ export type Database = {
         Args: { p_foster_profile_id: string };
         Returns: string;
       };
+      get_operational_dashboard_signals: {
+        Args: never;
+        Returns: {
+          active_cases: number;
+          content_reports_24h: number;
+          notification_failures_24h: number;
+          open_moderation_reports: number;
+          unanswered_critical_cases: number;
+          upload_failures_24h: number;
+        }[];
+      };
       get_public_case_detail: {
         Args: { p_public_reference: string };
         Returns: Json;
@@ -2155,6 +2198,13 @@ export type Database = {
         Returns: number;
       };
       queue_notification_deliveries: { Args: never; Returns: number };
+      record_analytics_event: {
+        Args: {
+          p_event_name: Database["public"]["Enums"]["analytics_event_name"];
+          p_properties?: Json;
+        };
+        Returns: undefined;
+      };
       record_delivery_results: {
         Args: { p_results: Json };
         Returns: undefined;
@@ -2243,6 +2293,23 @@ export type Database = {
     Enums: {
       account_restriction_type:
         "warning" | "restricted" | "suspended" | "banned";
+      analytics_event_name:
+        | "registration_completed"
+        | "onboarding_completed"
+        | "notification_permission_result"
+        | "report_draft_created"
+        | "report_submitted"
+        | "report_upload_failed"
+        | "nearby_alert_generated"
+        | "notification_opened"
+        | "response_committed"
+        | "responder_withdrew"
+        | "animal_located"
+        | "case_status_changed"
+        | "case_closed"
+        | "outcome_recorded"
+        | "content_reported"
+        | "moderation_action_completed";
       app_language: "bn" | "en";
       app_role:
         | "guest"
@@ -2521,6 +2588,24 @@ export const Constants = {
         "restricted",
         "suspended",
         "banned",
+      ],
+      analytics_event_name: [
+        "registration_completed",
+        "onboarding_completed",
+        "notification_permission_result",
+        "report_draft_created",
+        "report_submitted",
+        "report_upload_failed",
+        "nearby_alert_generated",
+        "notification_opened",
+        "response_committed",
+        "responder_withdrew",
+        "animal_located",
+        "case_status_changed",
+        "case_closed",
+        "outcome_recorded",
+        "content_reported",
+        "moderation_action_completed",
       ],
       app_language: ["bn", "en"],
       app_role: [

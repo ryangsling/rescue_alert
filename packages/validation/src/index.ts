@@ -116,3 +116,9 @@ export {
   registerDeviceSchema,
   type RegisterDeviceInput,
 } from "./notification-preferences";
+export {
+  analyticsEventNameSchema,
+  type AnalyticsEventName,
+  recordAnalyticsEventSchema,
+  type RecordAnalyticsEventInput,
+} from "./analytics";

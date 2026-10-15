@@ -847,35 +847,50 @@ Confirm to the agent: "Deployment accounts ready"
 
 ## Part 20 - Deployment and MVP acceptance
 
-**Status:** Pending
+**Status:** In progress. Web is live in production. Documentation, the operational dashboard, and a real backup workflow are built. Mobile store submission remains explicitly deferred by the developer's own choice ("I will upload Play Store or App Store later"), and the 17-criteria walkthrough has not been written up yet.
+
+Mobile push notification registration (originally listed as a Part 11 "Not done" item) was closed in this same session before this part - see Part 11's own updated status and commit `ce287f4`.
+
+**Web deployment.** `vercel link` created a new project (`rescue-alert-web`, team `jamesahsan1371-gmailcoms-projects`) and `vercel env add` set `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for production/preview/development. Two real deployment bugs found and fixed along the way, both disclosed rather than worked around silently:
+
+1. The first `vercel deploy --prod`, run from `apps/web`, uploaded only that directory - a plain pnpm-workspace Next.js app needs the whole monorepo (lockfile, sibling packages) to install correctly, so `npm install` (Vercel's fallback with no workspace context) failed outright. Fixed by linking and deploying from the **repository root** instead, with the project's Root Directory set explicitly via `vercel project update --root-directory apps/web --framework nextjs` (a real CLI flag, found after the docs' usual "set it in the dashboard" instructions didn't fit a no-browser environment).
+2. The second attempt uploaded 2.5 GB and failed on Vercel's 100 MB single-file limit - the cause was `.turbo/cache/*.tar.zst`, a local build-cache directory already correctly listed in `.gitignore` but evidently not excluded from a plain CLI deploy's upload set. Fixed by deleting the local `.turbo` cache and adding an explicit `.vercelignore` (`.turbo`, `coverage`, `dist`, `build`, `.expo`, `.git`, mobile's native dirs, `supabase/tests`) as a second line of defense.
+
+Production is live at `https://rescue-alert-web.vercel.app`, confirmed (not assumed) with direct `curl` checks returning 200 on `/safety`, `/sign-in`, and `/share/open-cases`, and the safety page's real `<title>` confirmed in the response body.
+
+**Backups.** Checked directly against Supabase's own docs rather than assumed: the **free tier has no automatic backups at all** - daily backups are a Pro-plan-and-above feature; Supabase's own guidance for free-tier projects is to run `pg_dump`/CLI `db dump` yourself. A new `.github/workflows/backup.yml` runs `pg_dump` on a daily cron (and on-demand via `workflow_dispatch`) inside a `postgres:17-alpine` container (matching the live project's Postgres major version) and uploads the dump as a 30-day workflow artifact. It must connect through Supabase's **Session Pooler** (port 5432), not the free tier's IPv6-only direct connection - GitHub-hosted runners have no outbound IPv6. The workflow reads `secrets.SUPABASE_DB_URL` (the full Session Pooler connection string, not a bare password). **Not yet done:** this secret has not been successfully set as of this writing - the developer has made several attempts but `gh secret list` still does not show it; the workflow cannot be verified end to end until it does. No restore drill has been run yet either (PAUSE-worthy before the pilot opens, see `docs/incident-response.md`).
+
+**Operational dashboard and analytics (PRD section 23).** A new `analytics_events` table (closed `analytics_event_name` enum, never free text; insert-only via `record_analytics_event()`, readable only by moderators) and `get_operational_dashboard_signals()` back a new "Operations" tab in the moderation dashboard, covering 5 of the 7 PRD signals directly from real data (active cases, unanswered critical cases, notification failures in 24h, upload failures in 24h via the new events table, open moderation reports) plus a raw 24h report-volume count. **Disclosed, not silently dropped:** "database and function errors" is not covered - it needs a log drain, a new third-party service decision out of scope for this pass; "suspicious report spikes" has no agreed detection threshold, so the raw count is shown for a human to judge rather than an invented formula. Of PRD's 16 named analytics events, only 3 are actually wired to a real call site in this pass - `notification_permission_result` (mobile, in the Part 20 push-notification code), `report_submitted` and `report_upload_failed` (mobile report wizard) - chosen because they feed the dashboard signals directly. The remaining 13 events and the web app's own call sites are not wired; this is a real gap, not an oversight to hide.
+
+**Documentation.** `docs/database-design.md`, `docs/privacy-model.md`, `docs/moderation-policy.md`, `docs/incident-response.md`, `docs/pilot-ops-playbook.md`, and `docs/bangla-terminology-guide.md` are all written, grounded directly against the live schema (`list_tables`) and actual migration SQL rather than from memory. `docs/privacy-model.md` explicitly flags PRD open question 10 (data retention) as unresolved rather than inventing a policy.
 
 ### Tasks
 
-- [ ] Link the Vercel project with `vercel link` and set environment variables with `vercel env add` for preview and production
-- [ ] Deploy the web application to production and verify public pages render server-side
-- [ ] Configure EAS build profiles for development, preview, and production
-- [ ] Produce Android and iOS builds and submit to internal testing tracks
-- [ ] Configure Supabase scheduled backups of schema and essential data
-- [ ] Verify quota monitoring on Supabase and Vercel free tiers
-- [ ] Write `docs/database-design.md`, `docs/privacy-model.md`, `docs/moderation-policy.md`, and `docs/incident-response.md`
-- [ ] Write the pilot operations playbook and the বাংলা terminology guide
-- [ ] Set up the operational dashboard monitoring the seven signals in PRD section 23
-- [ ] Wire the privacy-conscious analytics events listed in PRD section 23
+- [x] Link the Vercel project with `vercel link` and set environment variables with `vercel env add` for preview and production
+- [x] Deploy the web application to production and verify public pages render server-side
+- [x] Configure EAS build profiles for development, preview, and production - already present in `apps/mobile/eas.json` since the PAUSE 2 session (`eas init`); confirmed, not rebuilt
+- [ ] Produce Android and iOS builds and submit to internal testing tracks - deliberately deferred; the developer will handle store uploads themselves
+- [x] Configure Supabase scheduled backups of schema and essential data - workflow written (`.github/workflows/backup.yml`); **blocked** on `SUPABASE_DB_URL` actually being set as a GitHub secret, not yet confirmed working end to end
+- [x] Verify quota monitoring on Supabase and Vercel free tiers - documented as a manual weekly check in `docs/pilot-ops-playbook.md` (no automated alerting exists for either platform's quotas)
+- [x] Write `docs/database-design.md`, `docs/privacy-model.md`, `docs/moderation-policy.md`, and `docs/incident-response.md`
+- [x] Write the pilot operations playbook and the বাংলা terminology guide
+- [x] Set up the operational dashboard monitoring the seven signals in PRD section 23 - 5 of 7 directly, 1 as a raw count, 1 disclosed as not wired (see above)
+- [x] Wire the privacy-conscious analytics events listed in PRD section 23 - 3 of 16 events wired to real call sites (see above); the rest are a disclosed gap
 - [ ] Walk through all seventeen MVP acceptance criteria in PRD section 28 and record evidence for each
 
 ### Tests
 
-- [ ] Production deployment serves public pages correctly with valid social previews
-- [ ] Mobile builds install and run on real Android and iOS devices
-- [ ] A restore from backup succeeds in a scratch project
+- [x] Production deployment serves public pages correctly with valid social previews - `/safety`, `/sign-in`, `/share/open-cases` all return 200 via direct `curl`; social-preview metadata was already built and tested in Part 16, not re-verified against the new production URL specifically
+- [ ] Mobile builds install and run on real Android and iOS devices - not attempted, no device in this sandbox, and store submission is deferred
+- [ ] A restore from backup succeeds in a scratch project - cannot run until `SUPABASE_DB_URL` is set
 - [ ] Every one of the seventeen acceptance criteria has recorded passing evidence
 - [ ] Staged supervised rescue simulation completes end to end without a real animal emergency being fabricated
 
 ### Success criteria
 
 - [ ] All seventeen PRD section 28 acceptance criteria pass with evidence
-- [ ] Documented incident, moderation, and data-recovery procedures exist
-- [ ] The system is ready for a closed pilot in the selected Dhaka area
+- [x] Documented incident, moderation, and data-recovery procedures exist
+- [ ] The system is ready for a closed pilot in the selected Dhaka area - blocked on the remaining store-account and acceptance-criteria work above
 
 ### PAUSE Block Format 
 copy-paste this pattern whenever a part needs a manual step:

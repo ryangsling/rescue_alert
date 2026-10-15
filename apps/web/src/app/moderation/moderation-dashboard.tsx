@@ -24,6 +24,7 @@ import {
   upsertAlertEscalationStep,
   listAllAnimalTypes,
   upsertAnimalType,
+  getOperationalDashboardSignals,
 } from "@rescue-alert/api";
 import { translate, useLocale } from "@rescue-alert/localization";
 import type { Database } from "@rescue-alert/types";
@@ -48,9 +49,17 @@ type AlertEscalationStepRow =
 type AnimalTypeRow = Database["public"]["Tables"]["animal_types"]["Row"];
 type AccountRestrictionType =
   Database["public"]["Enums"]["account_restriction_type"];
+type OperationalSignals =
+  Database["public"]["Functions"]["get_operational_dashboard_signals"]["Returns"][number];
 
 type Tab =
-  "queue" | "reports" | "restrictions" | "appeals" | "audit" | "settings";
+  | "operations"
+  | "queue"
+  | "reports"
+  | "restrictions"
+  | "appeals"
+  | "audit"
+  | "settings";
 
 // A single "type a reason, then confirm" control - every destructive
 // moderation action in this dashboard requires one (MOD-007's reason
@@ -102,6 +111,16 @@ export function ModerationDashboard({
   const supabase = createClient();
 
   const [tab, setTab] = useState<Tab>("queue");
+
+  // --- Operational dashboard (PRD section 23) ---
+  const [signals, setSignals] = useState<OperationalSignals | null>(null);
+  useEffect(() => {
+    if (tab !== "operations") return;
+    getOperationalDashboardSignals(supabase).then(({ data }) =>
+      setSignals(data?.[0] ?? null),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   // --- Critical queue ---
   const [unansweredOnly, setUnansweredOnly] = useState(false);
@@ -240,6 +259,7 @@ export function ModerationDashboard({
   const [animalSortOrder, setAnimalSortOrder] = useState(0);
 
   const TABS: { id: Tab; labelKey: Parameters<typeof translate>[1] }[] = [
+    { id: "operations", labelKey: "moderation_nav_operations" },
     { id: "queue", labelKey: "moderation_nav_queue" },
     { id: "reports", labelKey: "moderation_nav_reports" },
     { id: "restrictions", labelKey: "moderation_nav_restrictions" },
@@ -265,6 +285,45 @@ export function ModerationDashboard({
           </button>
         ))}
       </nav>
+
+      {tab === "operations" && (
+        <section>
+          <h2>{t("moderation_nav_operations")}</h2>
+          {signals === null ? (
+            <p>{t("moderation_queue_empty")}</p>
+          ) : (
+            <table>
+              <tbody>
+                <tr>
+                  <td>{t("ops_signal_active_cases")}</td>
+                  <td>{signals.active_cases}</td>
+                </tr>
+                <tr>
+                  <td>{t("ops_signal_unanswered_critical")}</td>
+                  <td>{signals.unanswered_critical_cases}</td>
+                </tr>
+                <tr>
+                  <td>{t("ops_signal_notification_failures")}</td>
+                  <td>{signals.notification_failures_24h}</td>
+                </tr>
+                <tr>
+                  <td>{t("ops_signal_upload_failures")}</td>
+                  <td>{signals.upload_failures_24h}</td>
+                </tr>
+                <tr>
+                  <td>{t("ops_signal_open_reports")}</td>
+                  <td>{signals.open_moderation_reports}</td>
+                </tr>
+                <tr>
+                  <td>{t("ops_signal_report_volume")}</td>
+                  <td>{signals.content_reports_24h}</td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+          <p>{t("ops_signals_disclosure")}</p>
+        </section>
+      )}
 
       {tab === "queue" && (
         <section>

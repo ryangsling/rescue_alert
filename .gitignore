@@ -6,6 +6,15 @@ node_modules/
 .env
 .env.local
 .env.*.local
+# apps/mobile/.env is a committed exception: EAS Build's Gradle-invoked
+# Metro bundling step reads EXPO_PUBLIC_* values from an actual .env
+# file on disk, not from EAS's injected process env (confirmed directly
+# via a build that had the EAS env vars set but produced a bundle with
+# zero occurrences of the Supabase URL - the app crashed on launch
+# because of it). The two values in that file are the same
+# publishable/anon-safe class already shipped inside the compiled
+# bundle either way - committing them is not a new exposure.
+!apps/mobile/.env
 
 # Build outputs
 dist/

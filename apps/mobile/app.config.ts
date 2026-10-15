@@ -1,0 +1,85 @@
+import type { ExpoConfig } from "expo/config";
+
+// Static app.json cannot read process.env - a dynamic config is the
+// only way to point googleServicesFile at the file EAS Build injects
+// from the GOOGLE_SERVICES_JSON environment variable (the file itself
+// is gitignored and was never otherwise reaching the cloud build
+// archive). Falls back to the local gitignored copy for local builds.
+const config: ExpoConfig = {
+  name: "Rescue Alert",
+  slug: "rescue-alert",
+  version: "1.0.0",
+  orientation: "portrait",
+  icon: "./assets/images/icon.png",
+  scheme: "rescuealert",
+  userInterfaceStyle: "automatic",
+  ios: {
+    icon: "./assets/expo.icon",
+  },
+  android: {
+    package: "com.incodet.rescuealert",
+    googleServicesFile:
+      process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
+    adaptiveIcon: {
+      backgroundColor: "#E6F4FE",
+      foregroundImage: "./assets/images/android-icon-foreground.png",
+      backgroundImage: "./assets/images/android-icon-background.png",
+      monochromeImage: "./assets/images/android-icon-monochrome.png",
+    },
+    predictiveBackGestureEnabled: false,
+  },
+  web: {
+    output: "static",
+    favicon: "./assets/images/favicon.png",
+  },
+  plugins: [
+    "expo-router",
+    [
+      "expo-splash-screen",
+      {
+        backgroundColor: "#208AEF",
+        image: "./assets/images/splash-icon.png",
+        imageWidth: 76,
+      },
+    ],
+    "expo-sqlite",
+    [
+      "expo-image-picker",
+      {
+        photosPermission:
+          "Rescue Alert uses your photos to attach an image to a rescue report.",
+        cameraPermission:
+          "Rescue Alert uses your camera to photograph an animal for a rescue report.",
+        microphonePermission: false,
+      },
+    ],
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "Rescue Alert uses your location to record where an animal was seen.",
+      },
+    ],
+    "@maplibre/maplibre-react-native",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/images/android-icon-monochrome.png",
+        color: "#0B6B58",
+      },
+    ],
+  ],
+  experiments: {
+    typedRoutes: true,
+    reactCompiler: true,
+  },
+  extra: {
+    router: {},
+    eas: {
+      projectId: "b83602d7-b266-4d96-b86f-06cfd3368435",
+    },
+  },
+  owner: "crazydiamond99s-team",
+};
+
+export default config;
